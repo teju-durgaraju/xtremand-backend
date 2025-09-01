@@ -1,0 +1,19 @@
+package com.xtremand.domain.dto;
+
+import java.util.List;
+import java.util.Map;
+
+import lombok.Data;
+
+
+@Data
+public class SendEmailRequest {
+	    private RecipientGroup to;
+	    private RecipientGroup cc;
+	    private RecipientGroup bcc;
+	    private String subject;
+	    private String body;
+	    private String prompt; 
+	    private List<Long> contactIds;
+	}
+

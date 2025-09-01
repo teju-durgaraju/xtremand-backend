@@ -14,6 +14,8 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
@@ -36,7 +38,6 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class User extends BaseEntity {
 
 	private static final long serialVersionUID = 1L;
@@ -46,9 +47,8 @@ public class User extends BaseEntity {
 	@SequenceGenerator(name = "xt_user_id_seq", sequenceName = "xt_user_id_seq", allocationSize = 1)
 	private Long id;
 
-	@Builder.Default
 	@Column(name = "external_id", nullable = false, unique = true, updatable = false)
-	private UUID externalId = UUID.randomUUID();
+	private UUID externalId;
 
 	@NotNull
 	@Email
@@ -62,30 +62,42 @@ public class User extends BaseEntity {
 	@Column(nullable = false)
 	private String password;
 
-	@Builder.Default
 	@Column(name = "is_email_verified", nullable = false)
-	private boolean emailVerified = false;
+	private boolean emailVerified;
 
-	@Builder.Default
 	@Convert(disableConversion = true)
 	@JdbcTypeCode(SqlTypes.NAMED_ENUM)
 	@Column(columnDefinition = "user_status", nullable = false)
-	private UserStatus status = UserStatus.UNAPPROVED;
+	private UserStatus status;
 
-	@Builder.Default
 	@Column(nullable = false)
-	private boolean enabled = true;
+	private boolean enabled;
 
-	@Builder.Default
 	@Column(name = "account_non_expired", nullable = false)
-	private boolean accountNonExpired = true;
+	private boolean accountNonExpired;
 
-	@Builder.Default
 	@Column(name = "account_non_locked", nullable = false)
-	private boolean accountNonLocked = true;
+	private boolean accountNonLocked;
 
-	@Builder.Default
 	@Column(name = "credentials_non_expired", nullable = false)
-	private boolean credentialsNonExpired = true;
+	private boolean credentialsNonExpired;
 
+	@ManyToOne
+	@JoinColumn(name = "role_id")
+	private Role role;
+
+	@Builder
+	public User(String email, String username, String password, Role role) {
+		this.email = email;
+		this.username = username;
+		this.password = password;
+		this.role = role;
+		this.externalId = UUID.randomUUID();
+		this.emailVerified = false;
+		this.status = UserStatus.UNAPPROVED;
+		this.enabled = true;
+		this.accountNonExpired = true;
+		this.accountNonLocked = true;
+		this.credentialsNonExpired = true;
+	}
 }

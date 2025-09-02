@@ -24,10 +24,10 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "xt_roles", uniqueConstraints = { @UniqueConstraint(name = "uk_xt_roles_name", columnNames = "name"),
+@Table(name = "xt_role", uniqueConstraints = { @UniqueConstraint(name = "uk_xt_role_name", columnNames = "name"),
 		@UniqueConstraint(name = "uk_xt_role_key", columnNames = { "role_key" }) }, indexes = {
-				@Index(name = "idx_xt_roles_created_at", columnList = "created_at"),
-				@Index(name = "idx_xt_roles_updated_at", columnList = "updated_at") })
+				@Index(name = "idx_xt_role_created_at", columnList = "created_at"),
+				@Index(name = "idx_xt_role_updated_at", columnList = "updated_at") })
 @Getter
 @Setter
 @NoArgsConstructor

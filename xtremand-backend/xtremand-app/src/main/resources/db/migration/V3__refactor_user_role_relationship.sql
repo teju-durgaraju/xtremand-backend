@@ -6,7 +6,7 @@ CREATE TABLE xt_user_role (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_xa_user_role_user FOREIGN KEY (user_id) REFERENCES xt_users(id),
-    CONSTRAINT fk_xa_user_role_role FOREIGN KEY (role_id) REFERENCES xt_roles(id),
+    CONSTRAINT fk_xa_user_role_role FOREIGN KEY (role_id) REFERENCES xt_role(id),
     CONSTRAINT idx_xt_user_role_unique UNIQUE (user_id, role_id)
 );
 

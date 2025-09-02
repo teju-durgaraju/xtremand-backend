@@ -73,12 +73,12 @@ public class SecurityConfig {
 
 		http.csrf(csrf -> csrf.ignoringRequestMatchers("/auth/token", "/auth/refresh", "/logout", "/custom/token/**",
 				"/public/**", "/assets/**", "/actuator/**", "/v3/api-docs", "/openapi.json", "/docs.html",
-				"/swagger-ui/**", "/api/v1/account-activations","/**"))
+				"/swagger-ui/**", "/api/v1/account-activations", "/api/auth/signup"))
 				.authorizeHttpRequests(auth -> auth
 						.requestMatchers("/", "/index.html", "/login", "/auth/token", "/auth/refresh", "/error",
 								"/css/**", "/js/**", "/images/**", "/custom/token/**", "/public/**", "/assets/**",
 								"/actuator/**", "/docs.html", "/openapi.json", "/swagger-ui/**", "/v3/api-docs/**",
-								"/favicon.ico", "/api/v1/account-activations", "/debug/**","/**")
+								"/favicon.ico", "/api/v1/account-activations", "/debug/**", "/api/auth/signup")
 						.permitAll().anyRequest().authenticated())
 				.formLogin(Customizer.withDefaults()).oauth2Login(oauth -> oauth.successHandler(successHandler))
 				.exceptionHandling(eh -> eh.authenticationEntryPoint(customAuthenticationEntryPoint)

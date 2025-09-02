@@ -42,8 +42,6 @@ public class ExternalIdentityUserServiceImpl implements ExternalIdentityUserServ
             .email(email)
             .password(passwordEncoder.encode(UUID.randomUUID().toString()))
             .build();
-        user.setCreatedBy(1L);
-        user.setUpdatedBy(1L);
         return userRepository.save(user);
     }
 }

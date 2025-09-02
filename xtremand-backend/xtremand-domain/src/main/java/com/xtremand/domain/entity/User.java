@@ -1,5 +1,7 @@
 package com.xtremand.domain.entity;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 import org.hibernate.annotations.JdbcTypeCode;
@@ -7,15 +9,16 @@ import org.hibernate.type.SqlTypes;
 
 import com.xtremand.domain.enums.UserStatus;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
@@ -31,7 +34,6 @@ import lombok.Setter;
 @Table(name = "xt_users", uniqueConstraints = {
 		@UniqueConstraint(name = "uk_xt_user_email", columnNames = "email") }, indexes = {
 				@Index(name = "idx_xt_user_email", columnList = "email"),
-				@Index(name = "idx_xt_user_role_id", columnList = "role_id"),
 				@Index(name = "idx_xt_user_created_at", columnList = "created_at"),
 				@Index(name = "idx_xt_user_updated_at", columnList = "updated_at") })
 @Getter
@@ -82,16 +84,14 @@ public class User extends BaseEntity {
 	@Column(name = "credentials_non_expired", nullable = false)
 	private boolean credentialsNonExpired;
 
-	@ManyToOne
-	@JoinColumn(name = "role_id")
-	private Role role;
+	@OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
+	private Set<UserRole> userRoles = new HashSet<>();
 
 	@Builder
-	public User(String email, String username, String password, Role role) {
+	public User(String email, String username, String password) {
 		this.email = email;
 		this.username = username;
 		this.password = password;
-		this.role = role;
 		this.externalId = UUID.randomUUID();
 		this.emailVerified = false;
 		this.status = UserStatus.UNAPPROVED;

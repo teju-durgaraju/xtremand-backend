@@ -59,7 +59,7 @@ public class AuthController {
         Authentication authResult = authenticationService.authenticate(request, "web");
 
         RegisteredClient registeredClient = oauth2Components.getRegisteredClientService()
-                .findByClientId("xAmplify-Web-Client");
+                .findByClientId("xtremand-Web-Client");
 
         Map<String, Object> customAttributes = oauth2Components.getAttributeBuilder().build(request);
 

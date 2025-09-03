@@ -20,7 +20,7 @@ public class AuthenticationService {
 
 	public Authentication authenticate(LoginRequest loginRequest, String clientType) {
 		String password = loginRequest.getPassword();
-		if ("angular".equalsIgnoreCase(clientType)) {
+		if ("angular".equalsIgnoreCase(clientType) || "web".equalsIgnoreCase(clientType)) {
 			password = AESUtil.decrypt(password);
 		}
 		return authenticationManager

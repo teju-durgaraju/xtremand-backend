@@ -23,9 +23,13 @@ import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
 import org.springframework.web.cors.CorsConfigurationSource;
 
 import com.xtremand.auth.oauth2.converter.OAuth2ClientTokenAuthenticationConverter;
+import com.fasterxml.jackson.databind.Module;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.xtremand.auth.oauth2.provider.OAuth2TokenAuthenticationProvider;
 import com.xtremand.auth.oauth2.repository.TokenTtlRegisteredClientRepository;
 import com.xtremand.auth.oauth2.service.CustomOAuth2AuthorizationService;
+import java.util.HashSet;
+import org.springframework.security.jackson2.SecurityJackson2Modules;
 
 @Configuration
 @EnableWebSecurity
@@ -78,7 +82,16 @@ public class AuthorizationServerConfig {
     @Bean
     OAuth2AuthorizationService authorizationService(JdbcOperations jdbcOperations,
             RegisteredClientRepository registeredClientRepository) {
-        return new CustomOAuth2AuthorizationService(jdbcOperations, registeredClientRepository);
+        CustomOAuth2AuthorizationService authorizationService = new CustomOAuth2AuthorizationService(jdbcOperations,
+                registeredClientRepository);
+        ObjectMapper objectMapper = new ObjectMapper();
+        ClassLoader classLoader = AuthorizationServerConfig.class.getClassLoader();
+        objectMapper.registerModules(SecurityJackson2Modules.getModules(classLoader));
+        objectMapper.addMixIn(Long.class, Object.class);
+        objectMapper.addMixIn(HashSet.class, Object.class);
+        objectMapper.addMixIn(Double.class, Object.class);
+        authorizationService.setObjectMapper(objectMapper);
+        return authorizationService;
     }
 
     @Bean

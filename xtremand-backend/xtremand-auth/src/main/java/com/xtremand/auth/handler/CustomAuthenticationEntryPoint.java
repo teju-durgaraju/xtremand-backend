@@ -16,6 +16,7 @@ import org.springframework.http.MediaType;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.stereotype.Component;
 
@@ -68,6 +69,9 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
                 || authException instanceof UsernameNotFoundException) {
             errorCode = ErrorCodes.INVALID_CREDENTIALS;
             message = "Invalid username or password";
+        } else if (authException instanceof OAuth2AuthenticationException) {
+            errorCode = ErrorCodes.INVALID_TOKEN;
+            message = authException.getMessage();
         } else {
             errorCode = ErrorCodes.INVALID_TOKEN;
             message = "Access token is invalid or expired";

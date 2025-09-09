@@ -74,7 +74,7 @@ public class SecurityConfig {
 			.authorizeHttpRequests(authorize -> authorize
 				.anyRequest().authenticated()
 			)
-			.oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
+			.oauth2ResourceServer(oauth2 -> oauth2.opaqueToken(Customizer.withDefaults()))
 			.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 			.csrf(csrf -> csrf.disable());
 		return http.build();

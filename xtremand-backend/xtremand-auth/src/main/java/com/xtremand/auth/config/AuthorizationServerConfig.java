@@ -82,16 +82,13 @@ public class AuthorizationServerConfig {
     @Bean
     OAuth2AuthorizationService authorizationService(JdbcOperations jdbcOperations,
             RegisteredClientRepository registeredClientRepository) {
-        CustomOAuth2AuthorizationService authorizationService = new CustomOAuth2AuthorizationService(jdbcOperations,
-                registeredClientRepository);
         ObjectMapper objectMapper = new ObjectMapper();
         ClassLoader classLoader = AuthorizationServerConfig.class.getClassLoader();
         objectMapper.registerModules(SecurityJackson2Modules.getModules(classLoader));
         objectMapper.addMixIn(Long.class, Object.class);
         objectMapper.addMixIn(HashSet.class, Object.class);
         objectMapper.addMixIn(Double.class, Object.class);
-        authorizationService.setObjectMapper(objectMapper);
-        return authorizationService;
+        return new CustomOAuth2AuthorizationService(jdbcOperations, registeredClientRepository, objectMapper);
     }
 
     @Bean

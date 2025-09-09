@@ -14,20 +14,20 @@ import com.xtremand.auth.handler.CustomAuthenticationEntryPoint;
 @Configuration
 public class ResourceServerConfig {
 
-    @Bean
-    @Order(2)
-    SecurityFilterChain resourceServerSecurity(HttpSecurity http, OpaqueTokenIntrospector introspector,
-            CustomAuthenticationEntryPoint customAuthenticationEntryPoint,
-            CustomAccessDeniedHandler customAccessDeniedHandler) throws Exception {
-        http.securityMatcher("/api/**")
-                .csrf(csrf -> csrf.ignoringRequestMatchers("/api/auth/signup"))
-                .authorizeHttpRequests(
-                        auth -> auth.requestMatchers("/custom/token/**", "/api/auth/signup").permitAll().anyRequest()
-                                .hasAuthority("SCOPE_read"))
-                .oauth2ResourceServer(oauth2 -> oauth2.authenticationEntryPoint(customAuthenticationEntryPoint)
-                        .accessDeniedHandler(customAccessDeniedHandler)
-                        .opaqueToken(opaque -> opaque.introspector(introspector)));
-        return http.build();
-    }
+	@Bean
+	@Order(2)
+	SecurityFilterChain resourceServerSecurity(HttpSecurity http, OpaqueTokenIntrospector introspector,
+			CustomAuthenticationEntryPoint customAuthenticationEntryPoint,
+			CustomAccessDeniedHandler customAccessDeniedHandler) throws Exception {
+		http.securityMatcher("/api/**")
+				.csrf(csrf -> csrf.ignoringRequestMatchers("/api/auth/signup", "/api/auth/login"))
+				.authorizeHttpRequests(
+						auth -> auth.requestMatchers("/custom/token/**", "/api/auth/signup", "/api/auth/login")
+								.permitAll().anyRequest().hasAuthority("SCOPE_read"))
+				.oauth2ResourceServer(oauth2 -> oauth2.authenticationEntryPoint(customAuthenticationEntryPoint)
+						.accessDeniedHandler(customAccessDeniedHandler)
+						.opaqueToken(opaque -> opaque.introspector(introspector)));
+		return http.build();
+	}
 
 }

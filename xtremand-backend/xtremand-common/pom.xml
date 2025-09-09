@@ -29,5 +29,9 @@
 			<groupId>com.fasterxml.jackson.dataformat</groupId>
 			<artifactId>jackson-dataformat-yaml</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>com.xtremand</groupId>
+			<artifactId>xtremand-domain</artifactId>
+		</dependency>
 	</dependencies>
 </project>

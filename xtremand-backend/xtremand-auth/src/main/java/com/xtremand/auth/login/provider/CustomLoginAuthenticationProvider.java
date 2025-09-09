@@ -13,8 +13,12 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
+import com.xtremand.auth.login.exception.AccountDeletedException;
+import com.xtremand.auth.login.exception.AccountSuspendedException;
+import com.xtremand.auth.login.exception.AccountUnapprovedException;
 import com.xtremand.common.identity.AuthUserDto;
 import com.xtremand.common.identity.UserLookupService;
+import com.xtremand.domain.enums.UserStatus;
 
 @Component
 public class CustomLoginAuthenticationProvider implements AuthenticationProvider {
@@ -40,8 +44,15 @@ public class CustomLoginAuthenticationProvider implements AuthenticationProvider
 		AuthUserDto user = userLookupService.findByEmail(email)
 				.orElseThrow(() -> new UsernameNotFoundException("User not found: " + email));
 
-		if (!user.isActive()) {
-			throw new BadCredentialsException("User not active");
+		if (user.getStatus() != UserStatus.APPROVED) {
+			if (user.getStatus() == UserStatus.UNAPPROVED) {
+				throw new AccountUnapprovedException(
+						"Account not yet approved. Please check your email for activation.");
+			} else if (user.getStatus() == UserStatus.SUSPENDED) {
+				throw new AccountSuspendedException("Your account has been suspended. Contact support.");
+			} else if (user.getStatus() == UserStatus.DEACTIVATED) {
+				throw new AccountDeletedException("This account has been deleted.");
+			}
 		}
 
 		if (!passwordEncoder.matches(password, user.getPasswordHash())) {

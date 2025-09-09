@@ -42,6 +42,7 @@ public class UserLookupServiceImpl implements UserLookupService {
                                         .email(user.getEmail())
                                         .passwordHash(user.getPassword())
                                         .active(user.isEnabled())
+                                        .status(user.getStatus())
                                         .roles(new ArrayList<>(roles))
                                         .roleLabels(new ArrayList<>(roleLabels))
                                         .privileges(new ArrayList<>())

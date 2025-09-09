@@ -3,6 +3,7 @@ package com.xtremand.common.identity;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.xtremand.domain.enums.UserStatus;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -20,6 +21,7 @@ public class AuthUserDto {
 	private String passwordHash;
 	private List<String> roleLabels;
 	private boolean active;
+	private UserStatus status;
 	@JsonIgnore
 	private List<String> roles;
 	private List<String> privileges;

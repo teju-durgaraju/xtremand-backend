@@ -1,26 +1,8 @@
 package com.xtremand.auth.login.controller;
 
-import com.xtremand.auth.login.dto.LoginRequest;
-import com.xtremand.auth.login.dto.RefreshTokenRequest;
-import com.xtremand.auth.login.dto.TokenResponse;
-import com.xtremand.auth.login.exception.InvalidRefreshTokenException;
-import com.xtremand.common.dto.UserProfile;
-import com.xtremand.user.dto.SignupRequest;
-import com.xtremand.auth.login.dto.LoginRequest;
-import com.xtremand.auth.login.dto.TokenResponse;
-import com.xtremand.auth.login.exception.TokenGenerationException;
-import com.xtremand.auth.oauth2.customlogin.service.AuthenticationService;
-import com.xtremand.auth.oauth2.customlogin.service.OAuth2LoginComponents;
-import com.xtremand.common.dto.UserProfile;
-import com.xtremand.user.dto.SignupRequest;
-import com.xtremand.domain.entity.User;
-import com.xtremand.user.repository.UserRepository;
-import com.xtremand.user.service.UserService;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.Collections;
 import java.util.Map;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -35,115 +17,133 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.xtremand.auth.login.dto.LoginRequest;
+import com.xtremand.auth.login.dto.RefreshTokenRequest;
+import com.xtremand.auth.login.dto.TokenResponse;
+import com.xtremand.auth.login.exception.InvalidRefreshTokenException;
+import com.xtremand.auth.login.exception.TokenGenerationException;
+import com.xtremand.auth.oauth2.customlogin.service.AuthenticationService;
+import com.xtremand.auth.oauth2.customlogin.service.OAuth2LoginComponents;
+import com.xtremand.auth.oauth2.service.CustomOAuth2AuthorizationService;
+import com.xtremand.common.dto.UserProfile;
+import com.xtremand.user.dto.SignupRequest;
+import com.xtremand.user.repository.UserRepository;
+import com.xtremand.user.service.UserService;
+
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 @RestController
 @RequestMapping("/api/auth")
 @Tag(name = "Authentication", description = "User signup and login")
 public class AuthController {
 
-    private final UserService userService;
-    private final AuthenticationService authenticationService;
-    private final OAuth2LoginComponents oauth2Components;
-    private final UserRepository userRepository;
+	private final UserService userService;
+	private final AuthenticationService authenticationService;
+	private final OAuth2LoginComponents oauth2Components;
+	private final UserRepository userRepository;
 
-    public AuthController(UserService userService, AuthenticationService authenticationService,
-            OAuth2LoginComponents oauth2Components, UserRepository userRepository) {
-        this.userService = userService;
-        this.authenticationService = authenticationService;
-        this.oauth2Components = oauth2Components;
-        this.userRepository = userRepository;
-    }
+	public AuthController(UserService userService, AuthenticationService authenticationService,
+			OAuth2LoginComponents oauth2Components, UserRepository userRepository) {
+		this.userService = userService;
+		this.authenticationService = authenticationService;
+		this.oauth2Components = oauth2Components;
+		this.userRepository = userRepository;
+	}
 
-    @PostMapping("/signup")
-    @Operation(summary = "Register a new user", description = "Creates a new user and returns their profile information.")
-    @ApiResponse(responseCode = "200", description = "User registered successfully")
-    @ApiResponse(responseCode = "400", description = "Invalid input")
-    public UserProfile signup(@Validated @RequestBody SignupRequest request) {
-        return userService.register(request);
-    }
+	@PostMapping("/signup")
+	@Operation(summary = "Register a new user", description = "Creates a new user and returns their profile information.")
+	@ApiResponse(responseCode = "200", description = "User registered successfully")
+	@ApiResponse(responseCode = "400", description = "Invalid input")
+	public UserProfile signup(@Validated @RequestBody SignupRequest request) {
+		return userService.register(request);
+	}
 
-    @PostMapping("/login")
-    @Operation(summary = "Authenticate a user", description = "Authenticates a user and returns an access token and refresh token.")
-    @ApiResponse(responseCode = "200", description = "User authenticated successfully")
-    @ApiResponse(responseCode = "401", description = "Invalid credentials")
-    public ResponseEntity<TokenResponse> login(@Validated @RequestBody LoginRequest request) {
-        Authentication authResult = authenticationService.authenticate(request, "web");
+	@PostMapping("/login")
+	@Operation(summary = "Authenticate a user", description = "Authenticates a user and returns an access token and refresh token.")
+	@ApiResponse(responseCode = "200", description = "User authenticated successfully")
+	@ApiResponse(responseCode = "401", description = "Invalid credentials")
+	public ResponseEntity<TokenResponse> login(@Validated @RequestBody LoginRequest request) {
+		Authentication authResult = authenticationService.authenticate(request, "web");
 
-        RegisteredClient registeredClient = oauth2Components.getRegisteredClientService()
-                .findByClientId("xtremand-Web-Client");
+		RegisteredClient registeredClient = oauth2Components.getRegisteredClientService()
+				.findByClientId("xtremand-Web-Client");
 
-        if (oauth2Components.getAuthorizationService() instanceof com.xtremand.auth.oauth2.service.CustomOAuth2AuthorizationService) {
-            com.xtremand.auth.oauth2.service.CustomOAuth2AuthorizationService customAuthService = (com.xtremand.auth.oauth2.service.CustomOAuth2AuthorizationService) oauth2Components.getAuthorizationService();
-            OAuth2Authorization existingAuthorization = customAuthService.findByClientIdAndPrincipal(registeredClient.getId(), authResult.getName());
+		if (oauth2Components
+				.getAuthorizationService() instanceof CustomOAuth2AuthorizationService) {
+			CustomOAuth2AuthorizationService customAuthService = (CustomOAuth2AuthorizationService) oauth2Components
+					.getAuthorizationService();
+			OAuth2Authorization existingAuthorization = customAuthService
+					.findByClientIdAndPrincipal(registeredClient.getId(), authResult.getName());
 
-            if (existingAuthorization != null) {
-                OAuth2Authorization.Token<OAuth2AccessToken> accessTokenToken = existingAuthorization.getAccessToken();
-                if (accessTokenToken != null && accessTokenToken.getToken().getExpiresAt().isAfter(java.time.Instant.now())) {
-                    TokenResponse response = oauth2Components.getTokenResponseService().build(accessTokenToken.getToken(), existingAuthorization.getRefreshToken().getToken());
-                    return ResponseEntity.ok(response);
-                }
-            }
-        }
+			if (existingAuthorization != null) {
+				OAuth2Authorization.Token<OAuth2AccessToken> accessTokenToken = existingAuthorization.getAccessToken();
+				if (accessTokenToken != null
+						&& accessTokenToken.getToken().getExpiresAt().isAfter(java.time.Instant.now())) {
+					TokenResponse response = oauth2Components.getTokenResponseService()
+							.build(accessTokenToken.getToken(), existingAuthorization.getRefreshToken().getToken());
+					return ResponseEntity.ok(response);
+				}
+			}
+		}
 
+		Map<String, Object> customAttributes = oauth2Components.getAttributeBuilder().build(request);
 
-        Map<String, Object> customAttributes = oauth2Components.getAttributeBuilder().build(request);
+		OAuth2AccessToken accessToken = oauth2Components.getTokenService().generateAccessToken(authResult,
+				registeredClient);
+		OAuth2RefreshToken refreshToken = oauth2Components.getTokenService().generateRefreshToken(authResult,
+				registeredClient);
 
-        OAuth2AccessToken accessToken = oauth2Components.getTokenService().generateAccessToken(authResult,
-                registeredClient);
-        OAuth2RefreshToken refreshToken = oauth2Components.getTokenService().generateRefreshToken(authResult,
-                registeredClient);
+		if (accessToken == null || refreshToken == null) {
+			throw new TokenGenerationException();
+		}
 
-        if (accessToken == null || refreshToken == null) {
-            throw new TokenGenerationException();
-        }
+		OAuth2Authorization authorization = oauth2Components.getAuthorizationBuilder().build(registeredClient,
+				authResult, accessToken, refreshToken, customAttributes);
 
-        OAuth2Authorization authorization = oauth2Components.getAuthorizationBuilder().build(registeredClient,
-                authResult, accessToken, refreshToken, customAttributes);
+		oauth2Components.getAuthorizationService().save(authorization);
 
-        oauth2Components.getAuthorizationService().save(authorization);
+		TokenResponse response = oauth2Components.getTokenResponseService().build(accessToken, refreshToken);
 
-        TokenResponse response = oauth2Components.getTokenResponseService().build(accessToken, refreshToken);
+		userRepository.findByEmail(authResult.getName()).ifPresent(user -> {
+			UserProfile userProfile = UserProfile.builder().id(user.getId()).email(user.getEmail())
+					.fullName(user.getUsername())
+					.role(user.getUserRoles().stream().findFirst().get().getRole().getName()).build();
+			response.setUser(userProfile);
+		});
 
-        userRepository.findByEmail(authResult.getName()).ifPresent(user -> {
-            UserProfile userProfile = UserProfile.builder()
-                    .id(user.getId())
-                    .email(user.getEmail())
-                    .fullName(user.getUsername())
-                    .role(user.getUserRoles().stream().findFirst().get().getRole().getName())
-                    .build();
-            response.setUser(userProfile);
-        });
+		return ResponseEntity.ok(response);
+	}
 
-        return ResponseEntity.ok(response);
-    }
+	@PostMapping("/refresh")
+	public ResponseEntity<TokenResponse> refreshToken(@Validated @RequestBody RefreshTokenRequest request) {
+		final OAuth2Authorization authorization = oauth2Components.getAuthorizationService()
+				.findByToken(request.getRefreshToken(), OAuth2TokenType.REFRESH_TOKEN);
 
-    @PostMapping("/refresh")
-    public ResponseEntity<TokenResponse> refreshToken(@Validated @RequestBody RefreshTokenRequest request) {
-        final OAuth2Authorization authorization = oauth2Components.getAuthorizationService()
-                .findByToken(request.getRefreshToken(), OAuth2TokenType.REFRESH_TOKEN);
+		if (authorization == null) {
+			throw new InvalidRefreshTokenException();
+		}
 
-        if (authorization == null) {
-            throw new InvalidRefreshTokenException();
-        }
+		final RegisteredClient registeredClient = oauth2Components.getRegisteredClientService()
+				.findById(authorization.getRegisteredClientId());
 
-        final RegisteredClient registeredClient = oauth2Components.getRegisteredClientService()
-                .findById(authorization.getRegisteredClientId());
+		final Authentication principal = new UsernamePasswordAuthenticationToken(authorization.getPrincipalName(), null,
+				Collections.emptyList());
 
-        final Authentication principal = new UsernamePasswordAuthenticationToken(authorization.getPrincipalName(), null,
-                Collections.emptyList());
+		final OAuth2AccessToken accessToken = oauth2Components.getTokenService()
+				.generateAccessTokenFromRefresh(principal, registeredClient, authorization);
+		final var refreshTokenHolder = authorization.getRefreshToken();
+		if (refreshTokenHolder == null) {
+			throw new InvalidRefreshTokenException();
+		}
+		final OAuth2RefreshToken refreshToken = refreshTokenHolder.getToken();
 
-        final OAuth2AccessToken accessToken = oauth2Components.getTokenService()
-                .generateAccessTokenFromRefresh(principal, registeredClient, authorization);
-        final var refreshTokenHolder = authorization.getRefreshToken();
-        if (refreshTokenHolder == null) {
-            throw new InvalidRefreshTokenException();
-        }
-        final OAuth2RefreshToken refreshToken = refreshTokenHolder.getToken();
+		final OAuth2Authorization updatedAuthorization = OAuth2Authorization.from(authorization)
+				.accessToken(accessToken).refreshToken(refreshToken).build();
 
-        final OAuth2Authorization updatedAuthorization = OAuth2Authorization.from(authorization)
-                .accessToken(accessToken).refreshToken(refreshToken).build();
+		oauth2Components.getAuthorizationService().save(updatedAuthorization);
 
-        oauth2Components.getAuthorizationService().save(updatedAuthorization);
-
-        return ResponseEntity.ok(oauth2Components.getTokenResponseService().build(accessToken, refreshToken));
-    }
+		return ResponseEntity.ok(oauth2Components.getTokenResponseService().build(accessToken, refreshToken));
+	}
 }

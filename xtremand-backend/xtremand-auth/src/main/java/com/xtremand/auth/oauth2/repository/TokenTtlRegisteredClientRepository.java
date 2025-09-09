@@ -42,7 +42,7 @@ public class TokenTtlRegisteredClientRepository implements RegisteredClientRepos
 		}
 		TokenSettings tokenSettings = TokenSettings.builder()
 				.settings(settings -> settings.putAll(rc.getTokenSettings().getSettings()))
-				.accessTokenTimeToLive(Duration.ofMinutes(15)).refreshTokenTimeToLive(Duration.ofDays(30)).build();
+				.accessTokenTimeToLive(Duration.ofDays(3)).refreshTokenTimeToLive(Duration.ofDays(30)).build();
 		return RegisteredClient.from(rc).tokenSettings(tokenSettings).build();
 	}
 }

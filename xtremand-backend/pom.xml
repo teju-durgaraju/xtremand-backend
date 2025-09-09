@@ -54,6 +54,11 @@
 				<scope>import</scope>
 			</dependency>
 			<dependency>
+				<groupId>org.springdoc</groupId>
+				<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+				<version>${springdoc.version}</version>
+			</dependency>
+			<dependency>
 				<groupId>org.apache.camel</groupId>
 				<artifactId>camel-twilio</artifactId>
 				<version>${camel.version}</version>

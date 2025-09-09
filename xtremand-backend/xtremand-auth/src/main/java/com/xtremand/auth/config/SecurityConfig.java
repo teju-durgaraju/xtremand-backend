@@ -19,6 +19,7 @@ import org.springframework.security.authentication.dao.DaoAuthenticationProvider
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -66,19 +67,33 @@ public class SecurityConfig {
 	}
 
 	@Bean
+	@Order(2)
+	SecurityFilterChain resourceServerSecurityFilterChain(HttpSecurity http,
+			CustomAuthenticationEntryPoint customAuthenticationEntryPoint) throws Exception {
+		http
+			.securityMatcher("/api/**", "/email-verifier/**")
+			.authorizeHttpRequests(authorize -> authorize
+				.anyRequest().authenticated()
+			)
+			.oauth2ResourceServer(oauth2 -> oauth2.opaqueToken(Customizer.withDefaults()))
+			.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+			.exceptionHandling(eh -> eh.authenticationEntryPoint(customAuthenticationEntryPoint))
+			.csrf(csrf -> csrf.disable());
+		return http.build();
+	}
+
+	@Bean
 	@Order(3)
 	SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http, CustomOAuth2SuccessHandler successHandler,
 			CustomAuthenticationEntryPoint customAuthenticationEntryPoint,
 			CustomAccessDeniedHandler customAccessDeniedHandler) throws Exception {
 
-		http.csrf(csrf -> csrf.ignoringRequestMatchers("/auth/token", "/auth/refresh", "/logout", "/custom/token/**",
-				"/public/**", "/assets/**", "/actuator/**", "/v3/api-docs", "/openapi.json", "/docs.html",
-				"/swagger-ui/**", "/api/v1/account-activations","/**"))
+		http.csrf(csrf -> csrf.disable())
 				.authorizeHttpRequests(auth -> auth
-						.requestMatchers("/", "/index.html", "/login", "/auth/token", "/auth/refresh", "/error",
+						.requestMatchers("/", "/index.html", "/login", "/api/auth/refresh", "/error",
 								"/css/**", "/js/**", "/images/**", "/custom/token/**", "/public/**", "/assets/**",
 								"/actuator/**", "/docs.html", "/openapi.json", "/swagger-ui/**", "/v3/api-docs/**",
-								"/favicon.ico", "/api/v1/account-activations", "/debug/**","/**")
+								"/favicon.ico", "/api/v1/account-activations", "/debug/**", "/api/auth/signup")
 						.permitAll().anyRequest().authenticated())
 				.formLogin(Customizer.withDefaults()).oauth2Login(oauth -> oauth.successHandler(successHandler))
 				.exceptionHandling(eh -> eh.authenticationEntryPoint(customAuthenticationEntryPoint)

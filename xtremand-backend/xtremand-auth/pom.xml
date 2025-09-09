@@ -58,6 +58,15 @@
 			<artifactId>xtremand-common</artifactId>
 		</dependency>
 		<dependency>
+			<groupId>com.xtremand</groupId>
+			<artifactId>xtremand-user</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.springdoc</groupId>
+			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+		</dependency>
+		<dependency>
 			<groupId>commons-codec</groupId>
 			<artifactId>commons-codec</artifactId>
 		</dependency>

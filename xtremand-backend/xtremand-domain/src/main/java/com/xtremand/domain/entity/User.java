@@ -1,5 +1,7 @@
 package com.xtremand.domain.entity;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 import org.hibernate.annotations.JdbcTypeCode;
@@ -7,13 +9,16 @@ import org.hibernate.type.SqlTypes;
 
 import com.xtremand.domain.enums.UserStatus;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
@@ -26,17 +31,15 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "xt_user", uniqueConstraints = {
+@Table(name = "xt_users", uniqueConstraints = {
 		@UniqueConstraint(name = "uk_xt_user_email", columnNames = "email") }, indexes = {
 				@Index(name = "idx_xt_user_email", columnList = "email"),
-				@Index(name = "idx_xt_user_role_id", columnList = "role_id"),
 				@Index(name = "idx_xt_user_created_at", columnList = "created_at"),
 				@Index(name = "idx_xt_user_updated_at", columnList = "updated_at") })
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class User extends BaseEntity {
 
 	private static final long serialVersionUID = 1L;
@@ -46,9 +49,8 @@ public class User extends BaseEntity {
 	@SequenceGenerator(name = "xt_user_id_seq", sequenceName = "xt_user_id_seq", allocationSize = 1)
 	private Long id;
 
-	@Builder.Default
 	@Column(name = "external_id", nullable = false, unique = true, updatable = false)
-	private UUID externalId = UUID.randomUUID();
+	private UUID externalId;
 
 	@NotNull
 	@Email
@@ -62,30 +64,40 @@ public class User extends BaseEntity {
 	@Column(nullable = false)
 	private String password;
 
-	@Builder.Default
 	@Column(name = "is_email_verified", nullable = false)
-	private boolean emailVerified = false;
+	private boolean emailVerified;
 
-	@Builder.Default
 	@Convert(disableConversion = true)
 	@JdbcTypeCode(SqlTypes.NAMED_ENUM)
 	@Column(columnDefinition = "user_status", nullable = false)
-	private UserStatus status = UserStatus.UNAPPROVED;
+	private UserStatus status;
 
-	@Builder.Default
 	@Column(nullable = false)
-	private boolean enabled = true;
+	private boolean enabled;
 
-	@Builder.Default
 	@Column(name = "account_non_expired", nullable = false)
-	private boolean accountNonExpired = true;
+	private boolean accountNonExpired;
 
-	@Builder.Default
 	@Column(name = "account_non_locked", nullable = false)
-	private boolean accountNonLocked = true;
+	private boolean accountNonLocked;
 
-	@Builder.Default
 	@Column(name = "credentials_non_expired", nullable = false)
-	private boolean credentialsNonExpired = true;
+	private boolean credentialsNonExpired;
 
+	@OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
+	private Set<UserRole> userRoles = new HashSet<>();
+
+	@Builder
+	public User(String email, String username, String password) {
+		this.email = email;
+		this.username = username;
+		this.password = password;
+		this.externalId = UUID.randomUUID();
+		this.emailVerified = false;
+		this.status = UserStatus.UNAPPROVED;
+		this.enabled = true;
+		this.accountNonExpired = true;
+		this.accountNonLocked = true;
+		this.credentialsNonExpired = true;
+	}
 }

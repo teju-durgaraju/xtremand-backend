@@ -27,7 +27,7 @@ import lombok.Setter;
 
 @Entity
 @EntityListeners(AuditingEntityListener.class)
-@Table(uniqueConstraints = {
+@Table(name = "xt_user_role", uniqueConstraints = {
 		@UniqueConstraint(name = "idx_xt_user_role_unique", columnNames = { "user_id", "role_id" }) }, indexes = {
 				@Index(name = "idx_xt_user_role_user_id", columnList = "user_id"),
 				@Index(name = "idx_xt_user_role_role_id", columnList = "role_id"),

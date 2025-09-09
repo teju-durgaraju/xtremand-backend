@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.security.oauth2.server.authorization.JdbcOAuth2AuthorizationService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.security.oauth2.server.authorization.OAuth2Authorization;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 
@@ -12,6 +13,11 @@ public class CustomOAuth2AuthorizationService extends JdbcOAuth2AuthorizationSer
 	public CustomOAuth2AuthorizationService(JdbcOperations jdbcOperations,
 			RegisteredClientRepository registeredClientRepository) {
 		super(jdbcOperations, registeredClientRepository);
+	}
+
+	@Override
+	public void setObjectMapper(ObjectMapper objectMapper) {
+		super.setObjectMapper(objectMapper);
 	}
 
 	public OAuth2Authorization findByClientIdAndPrincipal(String registeredClientId, String principalName) {

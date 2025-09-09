@@ -13,6 +13,8 @@ import com.xtremand.auth.oauth2.customlogin.service.AuthenticationService;
 import com.xtremand.auth.oauth2.customlogin.service.OAuth2LoginComponents;
 import com.xtremand.common.dto.UserProfile;
 import com.xtremand.user.dto.SignupRequest;
+import com.xtremand.domain.entity.User;
+import com.xtremand.user.repository.UserRepository;
 import com.xtremand.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -41,11 +43,14 @@ public class AuthController {
     private final UserService userService;
     private final AuthenticationService authenticationService;
     private final OAuth2LoginComponents oauth2Components;
+    private final UserRepository userRepository;
 
-    public AuthController(UserService userService, AuthenticationService authenticationService, OAuth2LoginComponents oauth2Components) {
+    public AuthController(UserService userService, AuthenticationService authenticationService,
+            OAuth2LoginComponents oauth2Components, UserRepository userRepository) {
         this.userService = userService;
         this.authenticationService = authenticationService;
         this.oauth2Components = oauth2Components;
+        this.userRepository = userRepository;
     }
 
     @PostMapping("/signup")
@@ -98,8 +103,15 @@ public class AuthController {
 
         TokenResponse response = oauth2Components.getTokenResponseService().build(accessToken, refreshToken);
 
-        UserProfile userProfile = userService.findProfileByEmail(authResult.getName());
-        response.setUser(userProfile);
+        userRepository.findByEmail(authResult.getName()).ifPresent(user -> {
+            UserProfile userProfile = UserProfile.builder()
+                    .id(user.getId())
+                    .email(user.getEmail())
+                    .fullName(user.getUsername())
+                    .role(user.getUserRoles().stream().findFirst().get().getRole().getName())
+                    .build();
+            response.setUser(userProfile);
+        });
 
         return ResponseEntity.ok(response);
     }

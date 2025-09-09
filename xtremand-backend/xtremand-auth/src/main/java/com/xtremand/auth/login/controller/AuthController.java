@@ -61,6 +61,20 @@ public class AuthController {
         RegisteredClient registeredClient = oauth2Components.getRegisteredClientService()
                 .findByClientId("xtremand-Web-Client");
 
+        if (oauth2Components.getAuthorizationService() instanceof com.xtremand.auth.oauth2.service.CustomOAuth2AuthorizationService) {
+            com.xtremand.auth.oauth2.service.CustomOAuth2AuthorizationService customAuthService = (com.xtremand.auth.oauth2.service.CustomOAuth2AuthorizationService) oauth2Components.getAuthorizationService();
+            OAuth2Authorization existingAuthorization = customAuthService.findByClientIdAndPrincipal(registeredClient.getId(), authResult.getName());
+
+            if (existingAuthorization != null) {
+                OAuth2Authorization.Token<OAuth2AccessToken> accessTokenToken = existingAuthorization.getAccessToken();
+                if (accessTokenToken != null && accessTokenToken.getToken().getExpiresAt().isAfter(java.time.Instant.now())) {
+                    TokenResponse response = oauth2Components.getTokenResponseService().build(accessTokenToken.getToken(), existingAuthorization.getRefreshToken().getToken());
+                    return ResponseEntity.ok(response);
+                }
+            }
+        }
+
+
         Map<String, Object> customAttributes = oauth2Components.getAttributeBuilder().build(request);
 
         OAuth2AccessToken accessToken = oauth2Components.getTokenService().generateAccessToken(authResult,

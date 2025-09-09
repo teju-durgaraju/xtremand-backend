@@ -1,7 +1,9 @@
 package com.xtremand.auth.login.controller;
 
 import com.xtremand.auth.login.dto.LoginRequest;
+import com.xtremand.auth.login.dto.RefreshTokenRequest;
 import com.xtremand.auth.login.dto.TokenResponse;
+import com.xtremand.auth.login.exception.InvalidRefreshTokenException;
 import com.xtremand.common.dto.UserProfile;
 import com.xtremand.user.dto.SignupRequest;
 import com.xtremand.auth.login.dto.LoginRequest;
@@ -15,12 +17,15 @@ import com.xtremand.user.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.Collections;
 import java.util.Map;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.OAuth2AccessToken;
 import org.springframework.security.oauth2.core.OAuth2RefreshToken;
 import org.springframework.security.oauth2.server.authorization.OAuth2Authorization;
+import org.springframework.security.oauth2.server.authorization.OAuth2TokenType;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -92,6 +97,41 @@ public class AuthController {
         oauth2Components.getAuthorizationService().save(authorization);
 
         TokenResponse response = oauth2Components.getTokenResponseService().build(accessToken, refreshToken);
+
+        UserProfile userProfile = userService.findProfileByEmail(authResult.getName());
+        response.setUser(userProfile);
+
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<TokenResponse> refreshToken(@Validated @RequestBody RefreshTokenRequest request) {
+        final OAuth2Authorization authorization = oauth2Components.getAuthorizationService()
+                .findByToken(request.getRefreshToken(), OAuth2TokenType.REFRESH_TOKEN);
+
+        if (authorization == null) {
+            throw new InvalidRefreshTokenException();
+        }
+
+        final RegisteredClient registeredClient = oauth2Components.getRegisteredClientService()
+                .findById(authorization.getRegisteredClientId());
+
+        final Authentication principal = new UsernamePasswordAuthenticationToken(authorization.getPrincipalName(), null,
+                Collections.emptyList());
+
+        final OAuth2AccessToken accessToken = oauth2Components.getTokenService()
+                .generateAccessTokenFromRefresh(principal, registeredClient, authorization);
+        final var refreshTokenHolder = authorization.getRefreshToken();
+        if (refreshTokenHolder == null) {
+            throw new InvalidRefreshTokenException();
+        }
+        final OAuth2RefreshToken refreshToken = refreshTokenHolder.getToken();
+
+        final OAuth2Authorization updatedAuthorization = OAuth2Authorization.from(authorization)
+                .accessToken(accessToken).refreshToken(refreshToken).build();
+
+        oauth2Components.getAuthorizationService().save(updatedAuthorization);
+
+        return ResponseEntity.ok(oauth2Components.getTokenResponseService().build(accessToken, refreshToken));
     }
 }

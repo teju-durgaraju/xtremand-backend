@@ -2,11 +2,12 @@ package com.xtremand.auth.login.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import com.xtremand.common.dto.UserProfile;
 
 /**
  * DTO representing an OAuth2 token response.
  */
-@JsonPropertyOrder({ "access_token", "refresh_token", "token_type", "expires_in" })
+@JsonPropertyOrder({ "access_token", "refresh_token", "token_type", "expires_in", "user" })
 public class TokenResponse {
 
     @JsonProperty("access_token")
@@ -20,6 +21,9 @@ public class TokenResponse {
 
     @JsonProperty("refresh_token")
     private String refreshToken;
+
+    @JsonProperty("user")
+    private UserProfile user;
 
     public TokenResponse() {
     }
@@ -60,5 +64,13 @@ public class TokenResponse {
 
     public void setRefreshToken(String refreshToken) {
         this.refreshToken = refreshToken;
+    }
+
+    public UserProfile getUser() {
+        return user;
+    }
+
+    public void setUser(UserProfile user) {
+        this.user = user;
     }
 }

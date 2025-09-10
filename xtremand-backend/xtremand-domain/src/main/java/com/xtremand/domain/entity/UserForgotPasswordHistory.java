@@ -2,7 +2,7 @@ package com.xtremand.domain.entity;
 
 import java.time.LocalDateTime;
 
-import com.xtremand.domain.enums.ForgotPasswordStatus;
+import com.xtremand.domain.enums.TokenStatus;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -51,5 +51,5 @@ public class UserForgotPasswordHistory extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private ForgotPasswordStatus status;
+    private TokenStatus status;
 }

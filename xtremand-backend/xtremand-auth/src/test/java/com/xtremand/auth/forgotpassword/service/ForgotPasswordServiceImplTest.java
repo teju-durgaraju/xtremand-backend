@@ -5,7 +5,7 @@ import com.xtremand.auth.forgotpassword.dto.ResetPasswordRequest;
 import com.xtremand.auth.forgotpassword.exception.InvalidResetTokenException;
 import com.xtremand.domain.entity.User;
 import com.xtremand.domain.entity.UserForgotPasswordHistory;
-import com.xtremand.domain.enums.ForgotPasswordStatus;
+import com.xtremand.domain.enums.TokenStatus;
 import com.xtremand.user.repository.UserForgotPasswordHistoryRepository;
 import com.xtremand.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -61,7 +61,7 @@ class ForgotPasswordServiceImplTest {
 
         UserForgotPasswordHistory savedHistory = historyCaptor.getValue();
         assertEquals(user, savedHistory.getUser());
-        assertEquals(ForgotPasswordStatus.PENDING, savedHistory.getStatus());
+        assertEquals(TokenStatus.PENDING, savedHistory.getStatus());
         assertNotNull(savedHistory.getResetToken());
 
         ArgumentCaptor<String> emailCaptor = ArgumentCaptor.forClass(String.class);
@@ -96,7 +96,7 @@ class ForgotPasswordServiceImplTest {
                 .user(user)
                 .resetToken("valid-token")
                 .requestedAt(LocalDateTime.now())
-                .status(ForgotPasswordStatus.PENDING)
+                .status(TokenStatus.PENDING)
                 .build();
 
         when(forgotPasswordHistoryRepository.findByResetToken("valid-token")).thenReturn(Optional.of(history));
@@ -107,7 +107,7 @@ class ForgotPasswordServiceImplTest {
         verify(userRepository).save(userCaptor.capture());
         assertNotNull(userCaptor.getValue().getPassword());
 
-        assertEquals(ForgotPasswordStatus.COMPLETED, history.getStatus());
+        assertEquals(TokenStatus.COMPLETED, history.getStatus());
         assertNotNull(history.getResetAt());
         verify(forgotPasswordHistoryRepository).save(history);
     }
@@ -130,7 +130,7 @@ class ForgotPasswordServiceImplTest {
         request.setNewPassword("new-password");
 
         UserForgotPasswordHistory history = UserForgotPasswordHistory.builder()
-                .status(ForgotPasswordStatus.COMPLETED)
+                .status(TokenStatus.COMPLETED)
                 .build();
 
         when(forgotPasswordHistoryRepository.findByResetToken("used-token")).thenReturn(Optional.of(history));
@@ -146,13 +146,13 @@ class ForgotPasswordServiceImplTest {
 
         UserForgotPasswordHistory history = UserForgotPasswordHistory.builder()
                 .requestedAt(LocalDateTime.now().minusHours(2))
-                .status(ForgotPasswordStatus.PENDING)
+                .status(TokenStatus.PENDING)
                 .build();
 
         when(forgotPasswordHistoryRepository.findByResetToken("expired-token")).thenReturn(Optional.of(history));
 
         assertThrows(InvalidResetTokenException.class, () -> forgotPasswordService.resetPassword(request));
-        assertEquals(ForgotPasswordStatus.EXPIRED, history.getStatus());
+        assertEquals(TokenStatus.EXPIRED, history.getStatus());
         verify(forgotPasswordHistoryRepository).save(history);
     }
 }

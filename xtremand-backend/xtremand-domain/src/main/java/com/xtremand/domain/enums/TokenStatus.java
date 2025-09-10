@@ -1,6 +1,6 @@
 package com.xtremand.domain.enums;
 
-public enum ActivationStatus {
+public enum TokenStatus {
     PENDING,
     COMPLETED,
     EXPIRED

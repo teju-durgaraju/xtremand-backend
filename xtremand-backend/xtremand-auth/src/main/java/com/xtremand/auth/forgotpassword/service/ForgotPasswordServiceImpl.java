@@ -6,7 +6,7 @@ import com.xtremand.auth.forgotpassword.exception.InvalidResetTokenException;
 import com.xtremand.common.util.AESUtil;
 import com.xtremand.domain.entity.User;
 import com.xtremand.domain.entity.UserForgotPasswordHistory;
-import com.xtremand.domain.enums.ForgotPasswordStatus;
+import com.xtremand.domain.enums.TokenStatus;
 import com.xtremand.user.repository.UserForgotPasswordHistoryRepository;
 import com.xtremand.user.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
@@ -46,7 +46,7 @@ public class ForgotPasswordServiceImpl implements ForgotPasswordService {
                     .user(user)
                     .resetToken(token)
                     .requestedAt(LocalDateTime.now())
-                    .status(ForgotPasswordStatus.PENDING)
+                    .status(TokenStatus.PENDING)
                     .build();
             forgotPasswordHistoryRepository.save(history);
 
@@ -61,12 +61,12 @@ public class ForgotPasswordServiceImpl implements ForgotPasswordService {
         UserForgotPasswordHistory history = forgotPasswordHistoryRepository.findByResetToken(request.getResetToken())
                 .orElseThrow(() -> new InvalidResetTokenException("Invalid reset token"));
 
-        if (history.getStatus() != ForgotPasswordStatus.PENDING) {
+        if (history.getStatus() != TokenStatus.PENDING) {
             throw new InvalidResetTokenException("Reset token has already been used");
         }
 
         if (history.getRequestedAt().plusHours(tokenValidityHours).isBefore(LocalDateTime.now())) {
-            history.setStatus(ForgotPasswordStatus.EXPIRED);
+            history.setStatus(TokenStatus.EXPIRED);
             forgotPasswordHistoryRepository.save(history);
             throw new InvalidResetTokenException("Reset token has expired");
         }
@@ -75,7 +75,7 @@ public class ForgotPasswordServiceImpl implements ForgotPasswordService {
         user.setPassword(AESUtil.encrypt(request.getNewPassword()));
         userRepository.save(user);
 
-        history.setStatus(ForgotPasswordStatus.COMPLETED);
+        history.setStatus(TokenStatus.COMPLETED);
         history.setResetAt(LocalDateTime.now());
         forgotPasswordHistoryRepository.save(history);
     }

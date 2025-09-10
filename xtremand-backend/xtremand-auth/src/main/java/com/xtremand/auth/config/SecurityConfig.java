@@ -70,12 +70,23 @@ public class SecurityConfig {
 
 	@Bean
 	@Order(2)
+	SecurityFilterChain activationSecurityFilterChain(HttpSecurity http) throws Exception {
+		http
+			.securityMatcher("/api/auth/activate*")
+			.authorizeHttpRequests(authorize -> authorize
+				.anyRequest().permitAll()
+			)
+			.csrf(csrf -> csrf.disable());
+		return http.build();
+	}
+
+	@Bean
+	@Order(3)
 	SecurityFilterChain resourceServerSecurityFilterChain(HttpSecurity http,
 			CustomAuthenticationEntryPoint customAuthenticationEntryPoint) throws Exception {
 		http
 			.securityMatcher("/api/**", "/email-verifier/**")
 			.authorizeHttpRequests(authorize -> authorize
-				.requestMatchers("/api/auth/activate*").permitAll()
 				.anyRequest().authenticated()
 			)
 			.oauth2ResourceServer(oauth2 -> oauth2.opaqueToken(Customizer.withDefaults()))
@@ -86,7 +97,7 @@ public class SecurityConfig {
 	}
 
 	@Bean
-	@Order(3)
+	@Order(4)
 	SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http, CustomOAuth2SuccessHandler successHandler,
 			CustomAuthenticationEntryPoint customAuthenticationEntryPoint,
 			CustomAccessDeniedHandler customAccessDeniedHandler) throws Exception {

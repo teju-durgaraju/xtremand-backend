@@ -9,7 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.xtremand.domain.entity.User;
 import com.xtremand.domain.entity.UserActivationHistory;
-import com.xtremand.domain.enums.ActivationStatus;
+import com.xtremand.domain.enums.TokenStatus;
 import com.xtremand.domain.enums.UserStatus;
 import com.xtremand.user.repository.UserActivationHistoryRepository;
 import com.xtremand.user.repository.UserRepository;
@@ -41,7 +41,7 @@ public class ActivationServiceImpl implements ActivationService {
                 .user(user)
                 .activationToken(token)
                 .requestedAt(LocalDateTime.now())
-                .status(ActivationStatus.PENDING)
+                .status(TokenStatus.PENDING)
                 .build();
         userActivationHistoryRepository.save(history);
 
@@ -55,12 +55,12 @@ public class ActivationServiceImpl implements ActivationService {
         UserActivationHistory history = userActivationHistoryRepository.findByActivationToken(token)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid activation token"));
 
-        if (history.getStatus() == ActivationStatus.COMPLETED) {
+        if (history.getStatus() == TokenStatus.COMPLETED) {
             throw new IllegalStateException("Account already activated");
         }
 
         if (history.getRequestedAt().plusHours(activationTokenExpiryInHours).isBefore(LocalDateTime.now())) {
-            history.setStatus(ActivationStatus.EXPIRED);
+            history.setStatus(TokenStatus.EXPIRED);
             userActivationHistoryRepository.save(history);
             throw new IllegalStateException("Activation token expired");
         }
@@ -70,7 +70,7 @@ public class ActivationServiceImpl implements ActivationService {
         userRepository.save(user);
 
         history.setActivatedAt(LocalDateTime.now());
-        history.setStatus(ActivationStatus.COMPLETED);
+        history.setStatus(TokenStatus.COMPLETED);
         userActivationHistoryRepository.save(history);
     }
 }

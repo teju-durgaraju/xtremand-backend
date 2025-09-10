@@ -15,8 +15,13 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.HttpStatus;
 
+import com.xtremand.auth.forgotpassword.dto.ForgotPasswordRequest;
+import com.xtremand.auth.forgotpassword.dto.ResetPasswordRequest;
+import com.xtremand.auth.forgotpassword.service.ForgotPasswordService;
 import com.xtremand.auth.login.dto.LoginRequest;
 import com.xtremand.auth.login.dto.RefreshTokenRequest;
 import com.xtremand.auth.login.dto.TokenResponse;
@@ -43,13 +48,16 @@ public class AuthController {
 	private final AuthenticationService authenticationService;
 	private final OAuth2LoginComponents oauth2Components;
 	private final UserRepository userRepository;
+	private final ForgotPasswordService forgotPasswordService;
 
 	public AuthController(UserService userService, AuthenticationService authenticationService,
-			OAuth2LoginComponents oauth2Components, UserRepository userRepository) {
+			OAuth2LoginComponents oauth2Components, UserRepository userRepository,
+			ForgotPasswordService forgotPasswordService) {
 		this.userService = userService;
 		this.authenticationService = authenticationService;
 		this.oauth2Components = oauth2Components;
 		this.userRepository = userRepository;
+		this.forgotPasswordService = forgotPasswordService;
 	}
 
 	@PostMapping("/signup")
@@ -146,4 +154,22 @@ public class AuthController {
 
 		return ResponseEntity.ok(oauth2Components.getTokenResponseService().build(accessToken, refreshToken));
 	}
+
+	@PostMapping("/forgot-password")
+    @ResponseStatus(HttpStatus.OK)
+    @Operation(summary = "Forgot password", description = "Sends a password reset link to the user's email.")
+    @ApiResponse(responseCode = "200", description = "Password reset link sent successfully")
+    @ApiResponse(responseCode = "400", description = "Invalid input")
+    public void forgotPassword(@Validated @RequestBody ForgotPasswordRequest request) {
+        forgotPasswordService.forgotPassword(request);
+    }
+
+	@PostMapping("/reset-password")
+    @ResponseStatus(HttpStatus.OK)
+    @Operation(summary = "Reset password", description = "Resets the user's password.")
+    @ApiResponse(responseCode = "200", description = "Password reset successfully")
+    @ApiResponse(responseCode = "400", description = "Invalid input")
+    public void resetPassword(@Validated @RequestBody ResetPasswordRequest request) {
+        forgotPasswordService.resetPassword(request);
+    }
 }

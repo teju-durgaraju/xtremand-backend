@@ -1,5 +1,6 @@
 package com.xtremand.user.service;
 
+import com.xtremand.common.exception.DuplicateResourceException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -34,7 +35,10 @@ public class UserService {
 
 	public UserProfile register(SignupRequest request) {
 		userRepository.findByEmail(request.getEmail()).ifPresent(u -> {
-			throw new IllegalArgumentException("Email already in use");
+			throw new DuplicateResourceException("User", request.getEmail());
+		});
+		userRepository.findByUsername(request.getFullName()).ifPresent(u -> {
+			throw new DuplicateResourceException("User", request.getFullName());
 		});
 		String decrypted = AESUtil.decrypt(request.getPassword());
 		Role role = roleRepository.findByName(RoleName.TEAM_MEMBER.name())

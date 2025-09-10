@@ -21,13 +21,15 @@ public class UserService {
 	private final PasswordEncoder passwordEncoder;
 	private final RoleRepository roleRepository;
 	private final UserRoleRepository userRoleRepository;
+	private final ActivationService activationService;
 
 	public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, RoleRepository roleRepository,
-			UserRoleRepository userRoleRepository) {
+			UserRoleRepository userRoleRepository, ActivationService activationService) {
 		this.userRepository = userRepository;
 		this.passwordEncoder = passwordEncoder;
 		this.roleRepository = roleRepository;
 		this.userRoleRepository = userRoleRepository;
+		this.activationService = activationService;
 	}
 
 	public UserProfile register(SignupRequest request) {
@@ -45,6 +47,8 @@ public class UserService {
 		userRole.setUser(user);
 		userRole.setRole(role);
 		userRoleRepository.save(userRole);
+
+		activationService.createActivationTokenAndSendEmail(user);
 
 		return UserProfile.builder().id(user.getId()).email(user.getEmail()).fullName(user.getUsername())
 				.role(role.getName()).build();

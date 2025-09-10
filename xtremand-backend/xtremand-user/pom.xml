@@ -27,6 +27,11 @@
 			<groupId>com.xtremand</groupId>
 			<artifactId>xtremand-shared-services</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>com.xtremand</groupId>
+			<artifactId>xtremand-email</artifactId>
+			<version>${project.version}</version>
+		</dependency>
 		<!--
                 <dependency>
                         <groupId>com.xtremand</groupId>

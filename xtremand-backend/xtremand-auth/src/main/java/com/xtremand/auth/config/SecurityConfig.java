@@ -165,14 +165,8 @@ public class SecurityConfig {
 	}
 
 	@Bean
-	CustomLoginAuthenticationProvider authenticationProvider(UserLookupService userLookupService,
-			PasswordEncoder passwordEncoder) {
-		return new CustomLoginAuthenticationProvider(userLookupService, passwordEncoder);
-	}
-
-	@Bean
-	AuthenticationManager authenticationManager(CustomLoginAuthenticationProvider provider) {
-		return new ProviderManager(provider);
+	AuthenticationManager authenticationManager(CustomLoginAuthenticationProvider customLoginAuthenticationProvider) {
+		return new ProviderManager(customLoginAuthenticationProvider);
 	}
 
 	@Bean

@@ -40,9 +40,11 @@ import org.springframework.web.cors.CorsConfigurationSource;
 
 import com.xtremand.auth.handler.CustomAccessDeniedHandler;
 import com.xtremand.auth.handler.CustomAuthenticationEntryPoint;
+import com.xtremand.auth.login.provider.CustomLoginAuthenticationProvider;
 import com.xtremand.auth.oauth2.handler.CustomOAuth2SuccessHandler;
 import com.xtremand.auth.userdetails.CustomUserDetailsServiceImpl;
 import com.xtremand.common.environment.EnvironmentUtil;
+import com.xtremand.common.identity.UserLookupService;
 import com.xtremand.common.util.AESKeyHolder;
 
 import jakarta.annotation.PostConstruct;
@@ -163,18 +165,13 @@ public class SecurityConfig {
 	}
 
 	@Bean
-	DaoAuthenticationProvider authenticationProvider(CustomUserDetailsServiceImpl userDetailsService,
+	CustomLoginAuthenticationProvider authenticationProvider(UserLookupService userLookupService,
 			PasswordEncoder passwordEncoder) {
-		DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
-		provider.setUserDetailsService(userDetailsService);
-		provider.setPasswordEncoder(passwordEncoder);
-		// Propagate UsernameNotFoundException to allow custom messaging
-		provider.setHideUserNotFoundExceptions(false);
-		return provider;
+		return new CustomLoginAuthenticationProvider(userLookupService, passwordEncoder);
 	}
 
 	@Bean
-	AuthenticationManager authenticationManager(DaoAuthenticationProvider provider) {
+	AuthenticationManager authenticationManager(CustomLoginAuthenticationProvider provider) {
 		return new ProviderManager(provider);
 	}
 

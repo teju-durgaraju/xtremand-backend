@@ -5,3 +5,7 @@ springdoc:
     tags-sorter: alpha
   api-docs:
     path: /v3/api-docs
+xtremand:
+  security:
+    reset-password:
+      token-validity-hours: 1

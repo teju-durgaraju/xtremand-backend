@@ -75,6 +75,7 @@ public class SecurityConfig {
 		http
 			.securityMatcher("/api/**", "/email-verifier/**")
 			.authorizeHttpRequests(authorize -> authorize
+				.requestMatchers("/api/auth/activate*").permitAll()
 				.anyRequest().authenticated()
 			)
 			.oauth2ResourceServer(oauth2 -> oauth2.opaqueToken(Customizer.withDefaults()))

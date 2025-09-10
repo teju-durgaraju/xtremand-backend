@@ -22,10 +22,13 @@ import org.springframework.security.web.authentication.LoginUrlAuthenticationEnt
 import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
 import org.springframework.web.cors.CorsConfigurationSource;
 
+import com.xtremand.auth.handler.CustomAccessDeniedHandler;
+import com.xtremand.auth.handler.CustomAuthenticationEntryPoint;
 import com.xtremand.auth.oauth2.converter.OAuth2ClientTokenAuthenticationConverter;
 import com.xtremand.auth.oauth2.provider.OAuth2TokenAuthenticationProvider;
 import com.xtremand.auth.oauth2.repository.TokenTtlRegisteredClientRepository;
 import com.xtremand.auth.oauth2.service.CustomOAuth2AuthorizationService;
+import org.springframework.security.oauth2.server.resource.introspection.OpaqueTokenIntrospector;
 
 @Configuration
 @EnableWebSecurity
@@ -87,4 +90,19 @@ public class AuthorizationServerConfig {
         return new JdbcOAuth2AuthorizationConsentService(jdbcTemplate, registeredClientRepository);
     }
 
+    @Bean
+    @Order(2)
+    SecurityFilterChain resourceServerSecurity(HttpSecurity http, OpaqueTokenIntrospector introspector,
+            CustomAuthenticationEntryPoint customAuthenticationEntryPoint,
+            CustomAccessDeniedHandler customAccessDeniedHandler) throws Exception {
+        http.securityMatcher("/api/**")
+                .csrf(csrf -> csrf.ignoringRequestMatchers("/api/auth/signup", "/api/auth/login", "/api/auth/forgot-password", "/api/auth/reset-password"))
+                .authorizeHttpRequests(
+                        auth -> auth.requestMatchers("/custom/token/**", "/api/auth/signup", "/api/auth/login", "/api/auth/forgot-password", "/api/auth/reset-password")
+                                .permitAll().anyRequest().hasAuthority("SCOPE_read"))
+                .oauth2ResourceServer(oauth2 -> oauth2.authenticationEntryPoint(customAuthenticationEntryPoint)
+                        .accessDeniedHandler(customAccessDeniedHandler)
+                        .opaqueToken(opaque -> opaque.introspector(introspector)));
+        return http.build();
+    }
 }

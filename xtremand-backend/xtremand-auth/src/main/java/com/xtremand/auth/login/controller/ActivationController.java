@@ -12,20 +12,20 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/activate")
 @Tag(name = "Authentication", description = "User activation")
 public class ActivationController {
 
-    private final ActivationService activationService;
+	private final ActivationService activationService;
 
-    public ActivationController(ActivationService activationService) {
-        this.activationService = activationService;
-    }
+	public ActivationController(ActivationService activationService) {
+		this.activationService = activationService;
+	}
 
-    @GetMapping("/activate")
-    @Operation(summary = "Activate user account")
-    public ResponseEntity<String> activate(@RequestParam("token") String token) {
-        activationService.activateUser(token);
-        return ResponseEntity.ok("Account activated successfully");
-    }
+	@GetMapping
+	@Operation(summary = "Activate user account")
+	public ResponseEntity<String> activate(@RequestParam("token") String token) {
+		activationService.activateUser(token);
+		return ResponseEntity.ok("Account activated successfully");
+	}
 }

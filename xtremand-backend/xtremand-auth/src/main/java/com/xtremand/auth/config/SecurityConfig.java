@@ -70,18 +70,6 @@ public class SecurityConfig {
 
 	@Bean
 	@Order(2)
-	SecurityFilterChain activationSecurityFilterChain(HttpSecurity http) throws Exception {
-		http
-			.securityMatcher("/api/auth/activate*")
-			.authorizeHttpRequests(authorize -> authorize
-				.anyRequest().permitAll()
-			)
-			.csrf(csrf -> csrf.disable());
-		return http.build();
-	}
-
-	@Bean
-	@Order(3)
 	SecurityFilterChain resourceServerSecurityFilterChain(HttpSecurity http,
 			CustomAuthenticationEntryPoint customAuthenticationEntryPoint) throws Exception {
 		http
@@ -97,17 +85,17 @@ public class SecurityConfig {
 	}
 
 	@Bean
-	@Order(4)
+	@Order(3)
 	SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http, CustomOAuth2SuccessHandler successHandler,
 			CustomAuthenticationEntryPoint customAuthenticationEntryPoint,
 			CustomAccessDeniedHandler customAccessDeniedHandler) throws Exception {
 
 		http.csrf(csrf -> csrf.disable())
 				.authorizeHttpRequests(auth -> auth
-						.requestMatchers("/", "/index.html", "/login", "/api/auth/refresh", "/error",
+						.requestMatchers("/", "/index.html", "/auth/login", "/auth/refresh", "/error",
 								"/css/**", "/js/**", "/images/**", "/custom/token/**", "/public/**", "/assets/**",
 								"/actuator/**", "/docs.html", "/openapi.json", "/swagger-ui/**", "/v3/api-docs/**",
-								"/favicon.ico", "/api/v1/account-activations", "/debug/**", "/api/auth/signup")
+								"/favicon.ico", "/api/v1/account-activations", "/debug/**", "/auth/signup","/activate**")
 						.permitAll().anyRequest().authenticated())
 				.formLogin(Customizer.withDefaults()).oauth2Login(oauth -> oauth.successHandler(successHandler))
 				.exceptionHandling(eh -> eh.authenticationEntryPoint(customAuthenticationEntryPoint)

@@ -1,6 +1,7 @@
 package com.xtremand.user.service;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -40,7 +41,7 @@ public class ActivationServiceImpl implements ActivationService {
         UserActivationHistory history = UserActivationHistory.builder()
                 .user(user)
                 .activationToken(token)
-                .requestedAt(LocalDateTime.now())
+                .requestedAt(Instant.now())
                 .status(ActivationStatus.PENDING)
                 .build();
         userActivationHistoryRepository.save(history);
@@ -59,7 +60,7 @@ public class ActivationServiceImpl implements ActivationService {
             throw new IllegalStateException("Account already activated");
         }
 
-        if (history.getRequestedAt().plusHours(activationTokenExpiryInHours).isBefore(LocalDateTime.now())) {
+        if (history.getRequestedAt().plus(activationTokenExpiryInHours, ChronoUnit.HOURS).isBefore(Instant.now())) {
             history.setStatus(ActivationStatus.EXPIRED);
             userActivationHistoryRepository.save(history);
             throw new IllegalStateException("Activation token expired");
@@ -69,7 +70,7 @@ public class ActivationServiceImpl implements ActivationService {
         user.setStatus(UserStatus.ACTIVE);
         userRepository.save(user);
 
-        history.setActivatedAt(LocalDateTime.now());
+        history.setActivatedAt(Instant.now());
         history.setStatus(ActivationStatus.COMPLETED);
         userActivationHistoryRepository.save(history);
     }

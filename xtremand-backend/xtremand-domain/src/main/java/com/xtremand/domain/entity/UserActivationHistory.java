@@ -1,6 +1,6 @@
 package com.xtremand.domain.entity;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 import com.xtremand.domain.enums.ActivationStatus;
 
@@ -44,10 +44,10 @@ public class UserActivationHistory extends BaseEntity {
     private String activationToken;
 
     @Column(name = "requested_at", nullable = false)
-    private LocalDateTime requestedAt;
+    private Instant requestedAt;
 
     @Column(name = "activated_at")
-    private LocalDateTime activatedAt;
+    private Instant activatedAt;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

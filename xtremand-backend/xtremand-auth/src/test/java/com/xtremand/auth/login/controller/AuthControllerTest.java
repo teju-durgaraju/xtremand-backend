@@ -59,7 +59,7 @@ class AuthControllerTest {
 
         doNothing().when(forgotPasswordService).forgotPassword(any());
 
-        mockMvc.perform(post("/api/auth/forgot-password")
+        mockMvc.perform(post("/auth/forgot-password")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request))
                         .with(csrf()))
@@ -72,7 +72,7 @@ class AuthControllerTest {
         ForgotPasswordRequest request = new ForgotPasswordRequest();
         request.setEmail("invalid-email");
 
-        mockMvc.perform(post("/api/auth/forgot-password")
+        mockMvc.perform(post("/auth/forgot-password")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request))
                         .with(csrf()))
@@ -88,7 +88,7 @@ class AuthControllerTest {
 
         doNothing().when(forgotPasswordService).resetPassword(any());
 
-        mockMvc.perform(post("/api/auth/reset-password")
+        mockMvc.perform(post("/auth/reset-password")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request))
                         .with(csrf()))
@@ -101,7 +101,7 @@ class AuthControllerTest {
         ResetPasswordRequest request = new ResetPasswordRequest();
         request.setNewPassword("new-password");
 
-        mockMvc.perform(post("/api/auth/reset-password")
+        mockMvc.perform(post("/auth/reset-password")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request))
                         .with(csrf()))

@@ -69,22 +69,6 @@ public class SecurityConfig {
 	}
 
 	@Bean
-	@Order(2)
-	SecurityFilterChain resourceServerSecurityFilterChain(HttpSecurity http,
-			CustomAuthenticationEntryPoint customAuthenticationEntryPoint) throws Exception {
-		http
-			.securityMatcher("/api/**", "/email-verifier/**")
-			.authorizeHttpRequests(authorize -> authorize
-				.anyRequest().authenticated()
-			)
-			.oauth2ResourceServer(oauth2 -> oauth2.opaqueToken(Customizer.withDefaults()))
-			.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-			.exceptionHandling(eh -> eh.authenticationEntryPoint(customAuthenticationEntryPoint))
-			.csrf(csrf -> csrf.disable());
-		return http.build();
-	}
-
-	@Bean
 	@Order(3)
 	SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http, CustomOAuth2SuccessHandler successHandler,
 			CustomAuthenticationEntryPoint customAuthenticationEntryPoint,

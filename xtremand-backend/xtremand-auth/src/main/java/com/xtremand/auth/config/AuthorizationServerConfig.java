@@ -87,14 +87,4 @@ public class AuthorizationServerConfig {
         return new JdbcOAuth2AuthorizationConsentService(jdbcTemplate, registeredClientRepository);
     }
 
-    @Bean
-    @Order(2)
-    SecurityFilterChain appSecurityChain(HttpSecurity http) throws Exception {
-        http.authorizeHttpRequests(
-                auth -> auth.requestMatchers("/api/auth/signup", "/api/auth/login", "/api/auth/forgot-password", "/api/auth/reset-password")
-                        .permitAll().anyRequest().authenticated())
-                .formLogin(form -> form.loginPage("/login").permitAll());
-
-        return http.build();
-    }
 }

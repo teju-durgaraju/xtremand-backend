@@ -61,7 +61,7 @@ public class SecurityConfig {
 	}
 
 	@Bean
-	@Order(1)
+	@Order(2)
 	SecurityFilterChain apiDocsSecurityFilterChain(HttpSecurity http) throws Exception {
 		http.securityMatcher("/v3/api-docs").authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
 				.httpBasic(Customizer.withDefaults()).csrf(csrf -> csrf.disable());
@@ -69,12 +69,11 @@ public class SecurityConfig {
 	}
 
 	@Bean
-	@Order(2)
+	@Order(3)
 	SecurityFilterChain apiSecurityFilterChain(HttpSecurity http,
 			CustomAuthenticationEntryPoint customAuthenticationEntryPoint,
 			CustomAccessDeniedHandler customAccessDeniedHandler) throws Exception {
 		http
-			.securityMatcher("/**")
 			.authorizeHttpRequests(authorize -> authorize
 				.requestMatchers(
 					// Public auth endpoints
@@ -87,6 +86,7 @@ public class SecurityConfig {
 					"/public/**", "/assets/**", "/actuator/**", "/docs.html", "/openapi.json",
 					"/swagger-ui/**", "/v3/api-docs/**", "/favicon.ico", "/debug/**"
 				).permitAll()
+				.requestMatchers("/auth/**").hasAuthority("SCOPE_read")
 				.anyRequest().authenticated()
 			)
 			.oauth2ResourceServer(oauth2 -> oauth2.opaqueToken(Customizer.withDefaults()))
@@ -95,7 +95,7 @@ public class SecurityConfig {
 				.authenticationEntryPoint(customAuthenticationEntryPoint)
 				.accessDeniedHandler(customAccessDeniedHandler)
 			)
-			.csrf(csrf -> csrf.disable());
+			.csrf(csrf -> csrf.ignoringRequestMatchers("/auth/signup", "/auth/login"));
 		return http.build();
 	}
 

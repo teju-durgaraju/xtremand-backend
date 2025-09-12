@@ -9,6 +9,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 import com.xtremand.auth.login.exception.AccountDeletedException;
 import com.xtremand.auth.login.exception.AccountSuspendedException;
 import com.xtremand.auth.login.exception.AccountUnapprovedException;
+import com.xtremand.common.exception.BusinessException;
 
 @ControllerAdvice
 public class RestExceptionHandler extends ResponseEntityExceptionHandler {
@@ -26,5 +27,15 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(AccountDeletedException.class)
     protected ResponseEntity<Object> handleAccountDeleted(AccountDeletedException ex) {
         return new ResponseEntity<>(ex.getMessage(), HttpStatus.UNAUTHORIZED);
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    protected ResponseEntity<Object> handleIllegalState(IllegalStateException ex) {
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(BusinessException.class)
+    protected ResponseEntity<Object> handleBusinessException(BusinessException ex) {
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.CONFLICT);
     }
 }

@@ -91,6 +91,8 @@ public class AuthController {
 						&& accessTokenToken.getToken().getExpiresAt().isAfter(java.time.Instant.now())) {
 					TokenResponse response = oauth2Components.getTokenResponseService()
 							.build(accessTokenToken.getToken(), existingAuthorization.getRefreshToken().getToken());
+					userRepository.findByEmail(authResult.getName())
+							.ifPresent(user -> response.setUser(UserProfile.from(user)));
 					return ResponseEntity.ok(response);
 				}
 			}
@@ -114,12 +116,8 @@ public class AuthController {
 
 		TokenResponse response = oauth2Components.getTokenResponseService().build(accessToken, refreshToken);
 
-		userRepository.findByEmail(authResult.getName()).ifPresent(user -> {
-			UserProfile userProfile = UserProfile.builder().id(user.getId()).email(user.getEmail())
-					.fullName(user.getUsername())
-					.role(user.getUserRoles().stream().findFirst().get().getRole().getName()).build();
-			response.setUser(userProfile);
-		});
+		userRepository.findByEmail(authResult.getName())
+				.ifPresent(user -> response.setUser(UserProfile.from(user)));
 
 		return ResponseEntity.ok(response);
 	}

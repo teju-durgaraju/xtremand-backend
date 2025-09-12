@@ -69,28 +69,33 @@ public class SecurityConfig {
 	}
 
 	@Bean
-	@Order(3)
-	SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http, CustomOAuth2SuccessHandler successHandler,
+	@Order(2)
+	SecurityFilterChain apiSecurityFilterChain(HttpSecurity http,
 			CustomAuthenticationEntryPoint customAuthenticationEntryPoint,
 			CustomAccessDeniedHandler customAccessDeniedHandler) throws Exception {
-
-		http.csrf(csrf -> csrf.disable())
-				.authorizeHttpRequests(auth -> auth
-						.requestMatchers("/", "/index.html", "/auth/login", "/auth/refresh", "/error",
-								"/css/**", "/js/**", "/images/**", "/custom/token/**", "/public/**", "/assets/**",
-								"/actuator/**", "/docs.html", "/openapi.json", "/swagger-ui/**", "/v3/api-docs/**",
-								"/favicon.ico", "/api/v1/account-activations", "/debug/**", "/auth/signup","/activate**")
-						.permitAll().anyRequest().authenticated())
-				.formLogin(Customizer.withDefaults()).oauth2Login(oauth -> oauth.successHandler(successHandler))
-				.exceptionHandling(eh -> eh.authenticationEntryPoint(customAuthenticationEntryPoint)
-						.accessDeniedHandler(customAccessDeniedHandler))
-				.cors(cors -> cors.configurationSource(corsConfigurationSource)).logout(logout -> logout
-						.logoutUrl("/logout").logoutSuccessHandler((request, response, authentication) -> {
-							response.setStatus(HttpServletResponse.SC_OK);
-							response.setContentType("application/json");
-							response.getWriter().write("{\"message\": \"Logout successful\"}");
-						}).invalidateHttpSession(true).clearAuthentication(true).deleteCookies("JSESSIONID"));
-
+		http
+			.securityMatcher("/**")
+			.authorizeHttpRequests(authorize -> authorize
+				.requestMatchers(
+					// Public auth endpoints
+					"/auth/login", "/auth/refresh", "/auth/signup", "/auth/forgot-password", "/auth/reset-password",
+					"/activate",
+					// Public tracking endpoint
+					"/emails/track/click/**",
+					// Static assets, docs, and other public resources
+					"/", "/index.html", "/error", "/css/**", "/js/**", "/images/**", "/custom/token/**",
+					"/public/**", "/assets/**", "/actuator/**", "/docs.html", "/openapi.json",
+					"/swagger-ui/**", "/v3/api-docs/**", "/favicon.ico", "/debug/**"
+				).permitAll()
+				.anyRequest().authenticated()
+			)
+			.oauth2ResourceServer(oauth2 -> oauth2.opaqueToken(Customizer.withDefaults()))
+			.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+			.exceptionHandling(eh -> eh
+				.authenticationEntryPoint(customAuthenticationEntryPoint)
+				.accessDeniedHandler(customAccessDeniedHandler)
+			)
+			.csrf(csrf -> csrf.disable());
 		return http.build();
 	}
 

@@ -19,10 +19,10 @@ public class ResourceServerConfig {
 	SecurityFilterChain resourceServerSecurity(HttpSecurity http, OpaqueTokenIntrospector introspector,
 			CustomAuthenticationEntryPoint customAuthenticationEntryPoint,
 			CustomAccessDeniedHandler customAccessDeniedHandler) throws Exception {
-		http.securityMatcher("/api/**")
-				.csrf(csrf -> csrf.ignoringRequestMatchers("/api/auth/signup", "/api/auth/login"))
+		http.securityMatcher("/auth/**")
+				.csrf(csrf -> csrf.ignoringRequestMatchers("/auth/signup", "/auth/login"))
 				.authorizeHttpRequests(
-						auth -> auth.requestMatchers("/custom/token/**", "/api/auth/signup", "/api/auth/login")
+						auth -> auth.requestMatchers("/custom/token/**", "/auth/signup", "/auth/login")
 								.permitAll().anyRequest().hasAuthority("SCOPE_read"))
 				.oauth2ResourceServer(oauth2 -> oauth2.authenticationEntryPoint(customAuthenticationEntryPoint)
 						.accessDeniedHandler(customAccessDeniedHandler)

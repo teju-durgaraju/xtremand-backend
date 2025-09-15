@@ -10,6 +10,7 @@ import com.xtremand.domain.enums.TokenStatus;
 import com.xtremand.user.repository.UserForgotPasswordHistoryRepository;
 import com.xtremand.user.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +23,7 @@ public class ForgotPasswordServiceImpl implements ForgotPasswordService {
     private final UserRepository userRepository;
     private final UserForgotPasswordHistoryRepository forgotPasswordHistoryRepository;
     private final ForgotPasswordEmailService emailService;
+    private final PasswordEncoder passwordEncoder;
 
     @Value("${frontend.url}")
     private String frontendUrl;
@@ -31,10 +33,12 @@ public class ForgotPasswordServiceImpl implements ForgotPasswordService {
 
     public ForgotPasswordServiceImpl(UserRepository userRepository,
                                      UserForgotPasswordHistoryRepository forgotPasswordHistoryRepository,
-                                     ForgotPasswordEmailService emailService) {
+                                     ForgotPasswordEmailService emailService,
+                                     PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.forgotPasswordHistoryRepository = forgotPasswordHistoryRepository;
         this.emailService = emailService;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
@@ -72,7 +76,8 @@ public class ForgotPasswordServiceImpl implements ForgotPasswordService {
         }
 
         User user = history.getUser();
-        user.setPassword(AESUtil.encrypt(request.getNewPassword()));
+        String decryptedPassword = AESUtil.decrypt(request.getNewPassword());
+        user.setPassword(passwordEncoder.encode(decryptedPassword));
         userRepository.save(user);
 
         history.setStatus(TokenStatus.COMPLETED);

@@ -95,7 +95,7 @@ public class SecurityConfig {
 				.authenticationEntryPoint(customAuthenticationEntryPoint)
 				.accessDeniedHandler(customAccessDeniedHandler)
 			)
-			.csrf(csrf -> csrf.ignoringRequestMatchers("/auth/signup", "/auth/login"));
+			.csrf(csrf -> csrf.ignoringRequestMatchers("/auth/signup", "/auth/login", "/auth/forgot-password", "/auth/refresh"));
 		return http.build();
 	}
 

@@ -1,21 +1,27 @@
 package com.xtremand.auth.forgotpassword.service;
 
-import com.xtremand.auth.forgotpassword.dto.ForgotPasswordRequest;
-import com.xtremand.auth.forgotpassword.dto.ResetPasswordRequest;
-import com.xtremand.auth.forgotpassword.exception.InvalidResetTokenException;
-import com.xtremand.common.util.AESUtil;
-import com.xtremand.domain.entity.User;
-import com.xtremand.domain.entity.UserForgotPasswordHistory;
-import com.xtremand.domain.enums.TokenStatus;
-import com.xtremand.user.repository.UserForgotPasswordHistoryRepository;
-import com.xtremand.user.repository.UserRepository;
+import java.time.LocalDateTime;
+import java.util.UUID;
+
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.util.UUID;
+import com.xtremand.auth.forgotpassword.dto.ForgotPasswordRequest;
+import com.xtremand.auth.forgotpassword.dto.ResetPasswordRequest;
+import com.xtremand.auth.forgotpassword.exception.InvalidResetTokenException;
+import com.xtremand.auth.login.exception.AccountDeletedException;
+import com.xtremand.auth.login.exception.AccountSuspendedException;
+import com.xtremand.auth.login.exception.AccountUnapprovedException;
+import com.xtremand.common.util.AESUtil;
+import com.xtremand.domain.entity.User;
+import com.xtremand.domain.entity.UserForgotPasswordHistory;
+import com.xtremand.domain.enums.TokenStatus;
+import com.xtremand.domain.enums.UserStatus;
+import com.xtremand.user.repository.UserForgotPasswordHistoryRepository;
+import com.xtremand.user.repository.UserRepository;
 
 @Service
 public class ForgotPasswordServiceImpl implements ForgotPasswordService {
@@ -76,6 +82,23 @@ public class ForgotPasswordServiceImpl implements ForgotPasswordService {
         }
 
         User user = history.getUser();
+
+        if (user.getStatus() != UserStatus.ACTIVE) {
+            switch (user.getStatus()) {
+                case SUSPENDED:
+                    throw new AccountSuspendedException("Your account is suspended. Please contact support.");
+                case DEACTIVATED:
+                    throw new AccountDeletedException("Your account has been deactivated.");
+                case UNAPPROVED:
+                case PENDING_APPROVAL:
+                case INVITED:
+                case APPROVED:
+                    throw new AccountUnapprovedException("Your account is not active yet. Please approve your account first.");
+                default:
+                    throw new AuthenticationException("Account is not active. Password reset is not allowed.") {};
+            }
+        }
+
         String decryptedPassword = AESUtil.decrypt(request.getNewPassword());
         user.setPassword(passwordEncoder.encode(decryptedPassword));
         userRepository.save(user);

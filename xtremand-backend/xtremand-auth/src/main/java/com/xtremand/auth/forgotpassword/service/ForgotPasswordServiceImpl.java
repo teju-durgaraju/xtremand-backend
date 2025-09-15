@@ -51,6 +51,13 @@ public class ForgotPasswordServiceImpl implements ForgotPasswordService {
     @Transactional
     public void forgotPassword(ForgotPasswordRequest request) {
         userRepository.findByEmail(request.getEmail()).ifPresent(user -> {
+            // Invalidate all previous pending tokens for this user
+            forgotPasswordHistoryRepository.findByUserAndStatus(user, TokenStatus.PENDING)
+                    .forEach(token -> {
+                        token.setStatus(TokenStatus.SUPERSEDED);
+                        forgotPasswordHistoryRepository.save(token);
+                    });
+
             String token = UUID.randomUUID().toString();
             UserForgotPasswordHistory history = UserForgotPasswordHistory.builder()
                     .user(user)

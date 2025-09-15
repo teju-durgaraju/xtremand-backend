@@ -36,6 +36,13 @@ public class ActivationServiceImpl implements ActivationService {
     @Override
     @Transactional
     public void createActivationTokenAndSendEmail(User user) {
+        // Invalidate all previous pending tokens for this user
+        userActivationHistoryRepository.findByUserAndStatus(user, TokenStatus.PENDING)
+                .forEach(token -> {
+                    token.setStatus(TokenStatus.SUPERSEDED);
+                    userActivationHistoryRepository.save(token);
+                });
+
         String token = UUID.randomUUID().toString();
         UserActivationHistory history = UserActivationHistory.builder()
                 .user(user)

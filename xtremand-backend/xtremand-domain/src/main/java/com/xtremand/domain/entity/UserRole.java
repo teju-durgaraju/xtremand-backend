@@ -17,6 +17,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
@@ -46,7 +47,8 @@ public class UserRole implements Serializable {
 	private Instant createdAt;
 
 	@Id
-	@GeneratedValue(strategy = GenerationType.SEQUENCE)
+	@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "xt_user_role_seq")
+	@SequenceGenerator(name = "xt_user_role_seq", sequenceName = "xt_user_role_seq", allocationSize = 1)
 	private Long id;
 
 	@ManyToOne(fetch = FetchType.LAZY, optional = false)

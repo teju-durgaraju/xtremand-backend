@@ -14,6 +14,9 @@ import com.xtremand.domain.enums.UserStatus;
 import com.xtremand.user.repository.UserActivationHistoryRepository;
 import com.xtremand.user.repository.UserRepository;
 
+import com.xtremand.auth.login.exception.AccountAlreadyActivatedException;
+import com.xtremand.auth.login.exception.ActivationTokenExpiredException;
+import com.xtremand.auth.login.exception.InvalidActivationTokenException;
 import com.xtremand.email.notification.NotificationService;
 
 @Service
@@ -60,16 +63,16 @@ public class ActivationServiceImpl implements ActivationService {
     @Transactional
     public void activateUser(String token) {
         UserActivationHistory history = userActivationHistoryRepository.findByActivationToken(token)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid activation token"));
+                .orElseThrow(() -> new InvalidActivationTokenException("Invalid activation token"));
 
         if (history.getStatus() == TokenStatus.COMPLETED) {
-            throw new IllegalStateException("Account already activated");
+            throw new AccountAlreadyActivatedException("Account already activated");
         }
 
         if (history.getRequestedAt().plusHours(activationTokenExpiryInHours).isBefore(LocalDateTime.now())) {
             history.setStatus(TokenStatus.EXPIRED);
             userActivationHistoryRepository.save(history);
-            throw new IllegalStateException("Activation token expired");
+            throw new ActivationTokenExpiredException("Activation token expired");
         }
 
         User user = history.getUser();

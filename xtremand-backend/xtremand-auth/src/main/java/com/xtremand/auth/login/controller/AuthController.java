@@ -150,7 +150,12 @@ public class AuthController {
 
 		oauth2Components.getAuthorizationService().save(updatedAuthorization);
 
-		return ResponseEntity.ok(oauth2Components.getTokenResponseService().build(accessToken, refreshToken));
+		TokenResponse response = oauth2Components.getTokenResponseService().build(accessToken, refreshToken);
+
+		userRepository.findByEmail(authorization.getPrincipalName())
+				.ifPresent(user -> response.setUser(UserProfile.from(user)));
+
+		return ResponseEntity.ok(response);
 	}
 
 	@PostMapping("/forgot-password")

@@ -1,12 +1,16 @@
 package com.xtremand.email.verification.service;
 
+import com.xtremand.domain.entity.EmailValidationRule;
 import com.xtremand.domain.entity.UserEmailVerificationHistory;
 import com.xtremand.domain.enums.Confidence;
+import com.xtremand.domain.enums.RuleType;
 import com.xtremand.domain.enums.VerificationStatus;
 import com.xtremand.email.verification.dto.EmailVerificationChecks;
 import com.xtremand.email.verification.dto.EmailVerifierOutput;
 import com.xtremand.email.verification.dto.KpiDto;
+import com.xtremand.email.verification.repository.EmailValidationRuleRepository;
 import com.xtremand.email.verification.repository.UserEmailVerificationHistoryRepository;
+import jakarta.annotation.PostConstruct;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,8 +18,8 @@ import org.springframework.stereotype.Service;
 import org.xbill.DNS.*;
 
 import java.time.LocalDateTime;
-import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -26,6 +30,7 @@ import java.util.stream.Collectors;
 public class EmailVerificationService {
 
     private final UserEmailVerificationHistoryRepository historyRepository;
+    private final EmailValidationRuleRepository ruleRepository;
 
     @Value("${email.verification.score.syntax:20}")
     private int syntaxScore;
@@ -42,15 +47,28 @@ public class EmailVerificationService {
     @Value("${email.verification.score.smtp:10}")
     private int smtpScore;
 
-    @Value("${email.verification.disposable-domains}")
-    private Set<String> disposableDomains;
-    @Value("${email.verification.role-based-prefixes}")
-    private Set<String> roleBasedPrefixes;
-    @Value("${email.verification.blacklisted-domains}")
-    private Set<String> blacklistedDomains;
-
+    private final Set<String> disposableDomains = new HashSet<>();
+    private final Set<String> roleBasedPrefixes = new HashSet<>();
+    private final Set<String> catchAllDomains = new HashSet<>();
+    private final Set<String> blacklistedEmails = new HashSet<>();
+    private final Set<String> blacklistedDomains = new HashSet<>();
 
     private static final Pattern EMAIL_SYNTAX_PATTERN = Pattern.compile("^[a-zA-Z0-9_!#$%&'*+/=?`{|}~^.-]+@[a-zA-Z0-9.-]+$");
+
+    @PostConstruct
+    public void loadValidationRules() {
+        disposableDomains.addAll(getValuesForRuleType(RuleType.DISPOSABLE));
+        roleBasedPrefixes.addAll(getValuesForRuleType(RuleType.ROLE_BASED));
+        catchAllDomains.addAll(getValuesForRuleType(RuleType.CATCH_ALL));
+        blacklistedEmails.addAll(getValuesForRuleType(RuleType.BLACKLIST_EMAIL));
+        blacklistedDomains.addAll(getValuesForRuleType(RuleType.BLACKLIST_DOMAIN));
+    }
+
+    private List<String> getValuesForRuleType(RuleType ruleType) {
+        return ruleRepository.findByRuleType(ruleType).stream()
+                .map(EmailValidationRule::getValue)
+                .collect(Collectors.toList());
+    }
 
     public EmailVerifierOutput verify(String email) {
         boolean syntaxCheck = EMAIL_SYNTAX_PATTERN.matcher(email).matches();
@@ -80,9 +98,9 @@ public class EmailVerificationService {
 
         boolean mxCheck = hasMxRecord(domain);
         boolean disposableCheck = disposableDomains.contains(domain);
-        boolean roleBasedCheck = prefix != null && roleBasedPrefixes.contains(prefix);
-        boolean catchAllCheck = false; // Placeholder for now
-        boolean blacklistCheck = blacklistedDomains.contains(domain);
+        boolean roleBasedCheck = prefix != null && roleBasedPrefixes.contains(prefix + "@");
+        boolean catchAllCheck = catchAllDomains.contains(domain);
+        boolean blacklistCheck = blacklistedEmails.contains(email) || blacklistedDomains.contains(domain);
         boolean smtpCheck = false; // Placeholder for now
 
         int score = 0;
@@ -111,6 +129,10 @@ public class EmailVerificationService {
         if (disposableCheck) {
             status = VerificationStatus.DISPOSABLE;
         }
+        if (blacklistCheck) {
+            status = VerificationStatus.INVALID;
+        }
+
 
         UserEmailVerificationHistory history = UserEmailVerificationHistory.builder()
                 .email(email)

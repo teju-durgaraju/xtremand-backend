@@ -1,5 +1,6 @@
 package com.xtremand.email.verification.service;
 
+import com.xtremand.domain.entity.EmailVerificationBatch;
 import com.xtremand.domain.entity.EmailVerificationHistory;
 import com.xtremand.email.verification.config.ScoringProperties;
 import com.xtremand.email.verification.model.SmtpProbeResult;
@@ -32,16 +33,23 @@ public class EmailVerificationService {
 
     @Transactional
     public VerificationResult verifyEmail(String email, Long userId) {
+        return this.verifyEmail(email, userId, null);
+    }
+
+    @Transactional
+    public VerificationResult verifyEmail(String email, Long userId, EmailVerificationBatch batch) {
         // 1. Initial Syntax Check
         boolean isSyntaxValid = syntaxCheckProvider.isValid(email);
-        if (!isSyntaxValid) {
-            VerificationResult result = VerificationResult.builder().email(email).syntaxCheck(false).score(0).status(EmailVerificationHistory.VerificationStatus.INVALID).build();
-            saveHistory(result, userId);
-            return result;
+        String domain = null;
+        if (email != null && email.contains("@")) {
+            domain = email.substring(email.indexOf("@") + 1);
         }
 
-        String domain = email.substring(email.indexOf("@") + 1);
-        String prefix = email.substring(0, email.indexOf("@"));
+        if (!isSyntaxValid) {
+            VerificationResult result = VerificationResult.builder().email(email).syntaxCheck(false).score(0).status(EmailVerificationHistory.VerificationStatus.INVALID).build();
+            saveHistory(result, userId, domain, batch);
+            return result;
+        }
 
         // 2. Perform all checks
         boolean isDisposable = disposableDomainProvider.isDisposable(email);
@@ -71,7 +79,7 @@ public class EmailVerificationService {
         VerificationResult finalResult = resultBuilder.build();
 
         // 6. Save to history and return
-        saveHistory(finalResult, userId);
+        saveHistory(finalResult, userId, domain, batch);
         return finalResult;
     }
 
@@ -124,10 +132,12 @@ public class EmailVerificationService {
         builder.details(details);
     }
 
-    private void saveHistory(VerificationResult result, Long userId) {
+    private void saveHistory(VerificationResult result, Long userId, String domain, EmailVerificationBatch batch) {
         EmailVerificationHistory history = new EmailVerificationHistory();
         history.setUserId(userId);
         history.setEmail(result.getEmail());
+        history.setDomain(domain);
+        history.setBatch(batch);
         history.setStatus(result.getStatus());
         history.setRecommendation(result.getRecommendation());
         history.setScore(result.getScore());

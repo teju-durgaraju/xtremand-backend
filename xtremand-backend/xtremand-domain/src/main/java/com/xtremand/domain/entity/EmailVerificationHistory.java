@@ -26,8 +26,16 @@ public class EmailVerificationHistory {
 	@Column(name = "user_id")
 	private Long userId;
 
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "batch_id")
+	@ToString.Exclude
+	private EmailVerificationBatch batch;
+
 	@Column(name = "email", nullable = false)
 	private String email;
+
+	@Column(name = "domain")
+	private String domain;
 
 	@Enumerated(EnumType.STRING)
 	@Column(name = "status", nullable = false)

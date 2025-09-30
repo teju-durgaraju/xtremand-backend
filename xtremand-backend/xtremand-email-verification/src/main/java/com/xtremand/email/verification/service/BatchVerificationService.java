@@ -1,13 +1,19 @@
 package com.xtremand.email.verification.service;
 
+import com.xtremand.domain.entity.EmailVerificationBatch;
+import com.xtremand.domain.entity.EmailVerificationHistory;
+import com.xtremand.email.verification.config.AsyncConfig;
+import com.xtremand.email.verification.model.VerificationResult;
+import com.xtremand.email.verification.repository.EmailVerificationBatchRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import com.xtremand.email.verification.config.AsyncConfig;
-
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 @Service
@@ -16,25 +22,82 @@ import java.util.concurrent.CompletableFuture;
 public class BatchVerificationService {
 
     private final EmailVerificationService emailVerificationService;
+    private final EmailVerificationBatchRepository batchRepository;
 
-    public void startBatchVerification(List<String> emails, Long userId) {
+    @Transactional
+    public EmailVerificationBatch startBatchVerification(List<String> emails, Long userId) {
         log.info("Starting batch verification for {} emails. User ID: {}", emails.size(), userId);
-        processBatch(emails, userId);
+
+        // 1. Create and save the initial batch record
+        EmailVerificationBatch batch = new EmailVerificationBatch();
+        batch.setTotalEmails(emails.size());
+        EmailVerificationBatch savedBatch = batchRepository.save(batch);
+
+        // 2. Start the async processing
+        processBatch(emails, userId, savedBatch);
+
+        // 3. Return the initial batch object with its ID
+        return savedBatch;
     }
 
     @Async(AsyncConfig.BATCH_VERIFICATION_EXECUTOR)
-    public CompletableFuture<Void> processBatch(List<String> emails, Long userId) {
-        log.info("Executing async batch verification for {} emails.", emails.size());
+    @Transactional
+    public CompletableFuture<Void> processBatch(List<String> emails, Long userId, EmailVerificationBatch batch) {
+        log.info("Executing async batch verification for {} emails. Batch ID: {}", emails.size(), batch.getId());
+        List<VerificationResult> results = new ArrayList<>();
+
         for (String email : emails) {
             try {
-                // We call the main service which handles its own transaction for each email.
-                emailVerificationService.verifyEmail(email, userId);
+                // Pass the batch object to the verification service
+                VerificationResult result = emailVerificationService.verifyEmail(email, userId, batch);
+                results.add(result);
             } catch (Exception e) {
-                // Log and continue with the next email. Don't let one failure stop the whole batch.
-                log.error("Error verifying email '{}' during batch process. User ID: {}. Error: {}", email, userId, e.getMessage());
+                log.error("Error verifying email '{}' during batch process. Batch ID: {}. Error: {}", email, batch.getId(), e.getMessage());
+                // Create a failed result to ensure it's counted as invalid
+                results.add(VerificationResult.builder().email(email).status(EmailVerificationHistory.VerificationStatus.INVALID).build());
             }
         }
-        log.info("Async batch verification complete for user ID: {}", userId);
+
+        updateBatchStatistics(batch, results);
+
+        log.info("Async batch verification complete for Batch ID: {}", batch.getId());
         return CompletableFuture.completedFuture(null);
+    }
+
+    private void updateBatchStatistics(EmailVerificationBatch batch, List<VerificationResult> results) {
+        int validCount = 0;
+        int invalidCount = 0;
+        int deliverableCount = 0;
+        int disposableCount = 0;
+
+        for (VerificationResult result : results) {
+            if (result.getStatus() == EmailVerificationHistory.VerificationStatus.VALID) {
+                validCount++;
+            }
+            if (result.getStatus() == EmailVerificationHistory.VerificationStatus.INVALID) {
+                invalidCount++;
+            }
+            if (result.getStatus() == EmailVerificationHistory.VerificationStatus.DISPOSABLE) {
+                disposableCount++;
+            }
+            if (result.getSmtpProbeResult() != null && result.getSmtpProbeResult().getStatus() == EmailVerificationHistory.SmtpCheckStatus.DELIVERABLE) {
+                deliverableCount++;
+            }
+        }
+
+        // Re-fetch the batch entity to ensure it's managed in the current transaction
+        EmailVerificationBatch managedBatch = batchRepository.findById(batch.getId()).orElseThrow(() -> {
+            log.error("Batch with ID {} not found for update after processing.", batch.getId());
+            return new IllegalStateException("Batch not found for update");
+        });
+
+        managedBatch.setValidEmails(validCount);
+        managedBatch.setInvalidEmails(invalidCount);
+        managedBatch.setDisposableEmails(disposableCount);
+        managedBatch.setDeliverableEmails(deliverableCount);
+        managedBatch.calculateValidRate();
+
+        batchRepository.save(managedBatch);
+        log.info("Successfully updated statistics for Batch ID: {}", managedBatch.getId());
     }
 }

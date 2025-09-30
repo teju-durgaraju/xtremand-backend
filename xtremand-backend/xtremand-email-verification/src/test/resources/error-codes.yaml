@@ -1,0 +1,4 @@
+# Dummy error codes to satisfy test context creation.
+errors:
+  - code: "DUMMY_CODE"
+    message: "This is a dummy error for testing."

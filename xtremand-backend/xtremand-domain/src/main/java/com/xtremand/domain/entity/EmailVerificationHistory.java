@@ -1,15 +1,27 @@
 package com.xtremand.domain.entity;
 
-import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
-import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import java.time.Instant;
+import java.util.Map;
+
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.Type;
 
-import java.time.ZonedDateTime;
-import java.util.Map;
+import io.hypersistence.utils.hibernate.type.json.JsonBinaryType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.SequenceGenerator;
+import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
 @Entity
 @Table(name = "xt_user_email_verification_history")
@@ -49,8 +61,8 @@ public class EmailVerificationHistory {
 	private int score;
 
 	@Enumerated(EnumType.STRING)
-	@Column(name = "confidence")
-	private Confidence confidence;
+	@Column(name = "confidence", nullable = true)
+	private Confidence confidence = Confidence.LOW;
 
 	@Column(name = "syntax_check")
 	private boolean syntaxCheck;
@@ -93,7 +105,7 @@ public class EmailVerificationHistory {
 
 	@CreationTimestamp
 	@Column(name = "checked_at", updatable = false)
-	private ZonedDateTime checkedAt;
+	private Instant checkedAt;
 
 	public enum VerificationStatus {
 		VALID, INVALID, RISKY, UNKNOWN, DISPOSABLE, BLACKLISTED

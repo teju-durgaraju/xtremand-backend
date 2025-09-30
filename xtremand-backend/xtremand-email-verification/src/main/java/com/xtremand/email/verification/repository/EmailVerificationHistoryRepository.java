@@ -1,15 +1,16 @@
 package com.xtremand.email.verification.repository;
 
-import com.xtremand.domain.entity.EmailVerificationHistory;
+import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
-import java.time.ZonedDateTime;
-import java.util.List;
-import java.util.UUID;
+import com.xtremand.domain.entity.EmailVerificationHistory;
 
 @Repository
 public interface EmailVerificationHistoryRepository extends JpaRepository<EmailVerificationHistory, Long> {
@@ -32,14 +33,14 @@ public interface EmailVerificationHistoryRepository extends JpaRepository<EmailV
             score,
             confidence,
             checked_at AS "lastVerifiedAt",
-            syntax_check,
-            mx_check,
-            disposable_check,
-            role_based_check,
-            catch_all_check,
-            blacklist_check,
-            (case when smtp_check_status = 'DELIVERABLE' then true else false end) AS smtp_check,
-            (case when smtp_ping_status = 'SUCCESS' then true else false end) AS smtp_ping
+            syntax_check AS syntaxCheck,
+            mx_check AS mxCheck,
+            disposable_check AS disposableCheck,
+            role_based_check AS roleBasedCheck,
+            catch_all_check AS catchAllCheck,
+            blacklist_check AS blacklistCheck,
+            (case when smtp_check_status = 'DELIVERABLE' then true else false end) AS smtpCheck,
+            (case when smtp_ping_status = 'SUCCESS' then true else false end) AS smtpPing
         FROM
             RankedHistory
         WHERE
@@ -56,14 +57,14 @@ public interface EmailVerificationHistoryRepository extends JpaRepository<EmailV
         String getStatus();
         int getScore();
         String getConfidence();
-        ZonedDateTime getLastVerifiedAt();
-        boolean getSyntax_check();
-        boolean getMx_check();
-        boolean getDisposable_check();
-        boolean getRole_based_check();
-        boolean getCatch_all_check();
-        boolean getBlacklist_check();
-        boolean getSmtp_check();
-        boolean getSmtp_ping();
+        Instant getLastVerifiedAt();
+        boolean getSyntaxCheck();
+        boolean getMxCheck();
+        boolean getDisposableCheck();
+        boolean getRoleBasedCheck();
+        boolean getCatchAllCheck();
+        boolean getBlacklistCheck();
+        boolean getSmtpCheck();
+        boolean getSmtpPing();
     }
 }

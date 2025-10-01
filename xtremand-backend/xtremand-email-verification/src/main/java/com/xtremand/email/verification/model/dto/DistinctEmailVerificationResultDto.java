@@ -1,12 +1,11 @@
 package com.xtremand.email.verification.model.dto;
 
-import java.time.Instant;
-
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.xtremand.domain.entity.EmailVerificationHistory;
-
 import lombok.Builder;
 import lombok.Data;
+
+import java.time.OffsetDateTime;
 
 @Data
 @Builder
@@ -19,7 +18,7 @@ public class DistinctEmailVerificationResultDto {
 	private EmailVerificationHistory.Confidence confidence;
 
 	@JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'", timezone = "UTC")
-	private Instant lastVerifiedAt;
+	private OffsetDateTime lastVerifiedAt;
 
 	private VerificationChecksDto checks;
 

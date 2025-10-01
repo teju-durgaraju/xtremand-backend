@@ -5,6 +5,7 @@ import com.xtremand.domain.entity.EmailVerificationHistory;
 import com.xtremand.email.verification.config.AsyncConfig;
 import com.xtremand.email.verification.model.VerificationResult;
 import com.xtremand.email.verification.repository.EmailVerificationBatchRepository;
+import com.xtremand.email.verification.security.UserIdentityService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
@@ -13,7 +14,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
 @Service
@@ -23,18 +23,21 @@ public class BatchVerificationService {
 
     private final EmailVerificationService emailVerificationService;
     private final EmailVerificationBatchRepository batchRepository;
+    private final UserIdentityService userIdentityService;
 
     @Transactional
-    public EmailVerificationBatch startBatchVerification(List<String> emails, Long userId) {
+    public EmailVerificationBatch startBatchVerification(List<String> emails) {
+        Long userId = userIdentityService.getRequiredUserId();
         log.info("Starting batch verification for {} emails. User ID: {}", emails.size(), userId);
 
         // 1. Create and save the initial batch record
         EmailVerificationBatch batch = new EmailVerificationBatch();
         batch.setTotalEmails(emails.size());
+        batch.setUserId(userId);
         EmailVerificationBatch savedBatch = batchRepository.save(batch);
 
         // 2. Start the async processing
-        processBatch(emails, userId, savedBatch);
+        processBatch(emails, savedBatch);
 
         // 3. Return the initial batch object with its ID
         return savedBatch;
@@ -42,14 +45,15 @@ public class BatchVerificationService {
 
     @Async(AsyncConfig.BATCH_VERIFICATION_EXECUTOR)
     @Transactional
-    public CompletableFuture<Void> processBatch(List<String> emails, Long userId, EmailVerificationBatch batch) {
+    public CompletableFuture<Void> processBatch(List<String> emails, EmailVerificationBatch batch) {
         log.info("Executing async batch verification for {} emails. Batch ID: {}", emails.size(), batch.getId());
         List<VerificationResult> results = new ArrayList<>();
+        Long userId = batch.getUserId(); // Retrieve userId from the batch entity
 
         for (String email : emails) {
             try {
                 // Pass the batch object to the verification service
-                VerificationResult result = emailVerificationService.verifyEmail(email, userId, batch);
+                VerificationResult result = emailVerificationService.verifyEmail(email, batch);
                 results.add(result);
             } catch (Exception e) {
                 log.error("Error verifying email '{}' during batch process. Batch ID: {}. Error: {}", email, batch.getId(), e.getMessage());

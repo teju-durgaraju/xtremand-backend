@@ -14,6 +14,7 @@ import com.xtremand.email.verification.repository.EmailVerificationHistoryReposi
 public interface BatchResultMapper {
 
 	@Mapping(source = "id", target = "batchId")
+	@Mapping(source = "userId", target = "userId")
 	EmailVerificationBatchDto toBatchDto(EmailVerificationBatch entity);
 
 	@Mapping(source = "id", target = "batchId")

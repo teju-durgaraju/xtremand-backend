@@ -1,8 +1,8 @@
 package com.xtremand.email.verification.service;
 
-import com.xtremand.email.verification.model.dto.AccountKpi;
-import com.xtremand.email.verification.model.dto.KpiResponse;
+import com.xtremand.email.verification.model.dto.AccountKpiDto;
 import com.xtremand.email.verification.repository.EmailVerificationHistoryRepository;
+import com.xtremand.email.verification.security.UserIdentityService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,56 +15,62 @@ import java.math.RoundingMode;
 public class KpiAggregationService {
 
     private final EmailVerificationHistoryRepository repository;
+    private final UserIdentityService userIdentityService;
 
     @Transactional(readOnly = true)
-    public KpiResponse getAccountKpis() {
-        return repository.getAccountKpis()
+    public AccountKpiDto getAccountKpis() {
+        Long userId = userIdentityService.getRequiredUserId();
+        return repository.getAccountKpis(userId)
                 .map(this::buildSuccessResponse)
                 .orElse(buildDefaultResponse());
     }
 
-    private KpiResponse buildSuccessResponse(EmailVerificationHistoryRepository.KpiQueryResult result) {
+    private AccountKpiDto buildSuccessResponse(EmailVerificationHistoryRepository.KpiQueryResult result) {
         long totalProcessed = result.getTotalProcessed();
         long validEmails = result.getValidEmails();
         long invalidEmails = result.getInvalidEmails();
 
-        BigDecimal deliverabilityRate = BigDecimal.ZERO;
-        BigDecimal bounceRate = BigDecimal.ZERO;
+        double deliverabilityRate = 0.0;
+        double bounceRate = 0.0;
+        double qualityScore = 0.0;
 
         if (totalProcessed > 0) {
             deliverabilityRate = BigDecimal.valueOf(validEmails)
                     .multiply(BigDecimal.valueOf(100))
-                    .divide(BigDecimal.valueOf(totalProcessed), 2, RoundingMode.HALF_UP);
+                    .divide(BigDecimal.valueOf(totalProcessed), 2, RoundingMode.HALF_UP).doubleValue();
             bounceRate = BigDecimal.valueOf(invalidEmails)
                     .multiply(BigDecimal.valueOf(100))
-                    .divide(BigDecimal.valueOf(totalProcessed), 2, RoundingMode.HALF_UP);
+                    .divide(BigDecimal.valueOf(totalProcessed), 2, RoundingMode.HALF_UP).doubleValue();
+            qualityScore = BigDecimal.valueOf(validEmails)
+                    .multiply(BigDecimal.valueOf(100))
+                    .divide(BigDecimal.valueOf(totalProcessed), 2, RoundingMode.HALF_UP).doubleValue();
         }
 
-        AccountKpi accountKpi = AccountKpi.builder()
+        AccountKpiDto.AccountKpi accountKpi = AccountKpiDto.AccountKpi.builder()
                 .validEmails(validEmails)
                 .invalidEmails(invalidEmails)
                 .riskyEmails(result.getRiskyEmails())
                 .unknownEmails(result.getUnknownEmails())
                 .totalProcessed(totalProcessed)
-                .qualityScore(result.getQualityScore().setScale(2, RoundingMode.HALF_UP))
+                .qualityScore(qualityScore)
                 .deliverabilityRate(deliverabilityRate)
                 .bounceRate(bounceRate)
                 .build();
 
-        return KpiResponse.builder().account(accountKpi).build();
+        return AccountKpiDto.builder().accountKpi(accountKpi).build();
     }
 
-    private KpiResponse buildDefaultResponse() {
-        AccountKpi defaultKpi = AccountKpi.builder()
+    private AccountKpiDto buildDefaultResponse() {
+        AccountKpiDto.AccountKpi defaultKpi = AccountKpiDto.AccountKpi.builder()
                 .validEmails(0)
                 .invalidEmails(0)
                 .riskyEmails(0)
                 .unknownEmails(0)
                 .totalProcessed(0)
-                .qualityScore(BigDecimal.ZERO.setScale(2))
-                .deliverabilityRate(BigDecimal.ZERO.setScale(2))
-                .bounceRate(BigDecimal.ZERO.setScale(2))
+                .qualityScore(0.0)
+                .deliverabilityRate(0.0)
+                .bounceRate(0.0)
                 .build();
-        return KpiResponse.builder().account(defaultKpi).build();
+        return AccountKpiDto.builder().accountKpi(defaultKpi).build();
     }
 }

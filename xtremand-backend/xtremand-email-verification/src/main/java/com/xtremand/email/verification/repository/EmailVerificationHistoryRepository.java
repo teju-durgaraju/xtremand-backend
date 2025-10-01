@@ -1,7 +1,6 @@
 package com.xtremand.email.verification.repository;
 
 import java.math.BigDecimal;
-import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -11,6 +10,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.xtremand.domain.entity.EmailVerificationHistory;
@@ -28,12 +28,13 @@ public interface EmailVerificationHistoryRepository extends JpaRepository<EmailV
             COALESCE(AVG(score), 0) AS qualityScore
         FROM
             xt_user_email_verification_history
+        WHERE user_id = :userId
         """;
 
     @Query(nativeQuery = true, value = ACCOUNT_KPI_QUERY)
-    Optional<KpiQueryResult> getAccountKpis();
+    Optional<KpiQueryResult> getAccountKpis(@Param("userId") Long userId);
 
-    Page<EmailVerificationHistory> findByBatch_Id(UUID batchId, Pageable pageable);
+    Page<EmailVerificationHistory> findByBatchIdAndUser_Id(UUID batchId, Long userId, Pageable pageable);
 
     String FIND_DISTINCT_LATEST_QUERY = """
         WITH RankedHistory AS (
@@ -42,6 +43,7 @@ public interface EmailVerificationHistoryRepository extends JpaRepository<EmailV
                 ROW_NUMBER() OVER (PARTITION BY h.email ORDER BY h.checked_at DESC) as rn
             FROM
                 xt_user_email_verification_history h
+            WHERE h.user_id = :userId
         )
         SELECT
             id,
@@ -66,7 +68,7 @@ public interface EmailVerificationHistoryRepository extends JpaRepository<EmailV
         """;
 
     @Query(nativeQuery = true, value = FIND_DISTINCT_LATEST_QUERY)
-    List<DistinctLatestVerificationProjection> findDistinctLatest();
+    List<DistinctLatestVerificationProjection> findDistinctLatest(@Param("userId") Long userId);
 
     interface KpiQueryResult {
         long getValidEmails();

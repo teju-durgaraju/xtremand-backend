@@ -10,6 +10,7 @@ import com.xtremand.email.verification.model.mapper.EmailVerificationMapper;
 import com.xtremand.email.verification.repository.EmailVerificationBatchRepository;
 import com.xtremand.email.verification.repository.EmailVerificationHistoryRepository;
 import com.xtremand.email.verification.repository.EmailVerificationHistoryRepository.DistinctLatestVerificationProjection;
+import com.xtremand.email.verification.security.UserIdentityService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -24,10 +25,12 @@ import org.springframework.data.domain.Pageable;
 import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -42,15 +45,19 @@ class ReportingServiceTest {
     private BatchResultMapper batchResultMapper;
     @Mock
     private EmailVerificationMapper emailVerificationMapper;
+    @Mock
+    private UserIdentityService userIdentityService;
 
     @InjectMocks
     private ReportingService reportingService;
 
     private Pageable pageable;
+    private final Long testUserId = 1L;
 
     @BeforeEach
     void setUp() {
         pageable = PageRequest.of(0, 10);
+        when(userIdentityService.getRequiredUserId()).thenReturn(testUserId);
     }
 
     @Test
@@ -60,7 +67,7 @@ class ReportingServiceTest {
         Page<EmailVerificationBatch> page = new PageImpl<>(Collections.singletonList(batch));
         EmailVerificationBatchDto dto = EmailVerificationBatchDto.builder().build();
 
-        when(batchRepository.findAll(pageable)).thenReturn(page);
+        when(batchRepository.findByUserId(testUserId, pageable)).thenReturn(page);
         when(batchResultMapper.toBatchDto(any(EmailVerificationBatch.class))).thenReturn(dto);
 
         // When
@@ -79,7 +86,8 @@ class ReportingServiceTest {
         Page<EmailVerificationHistory> page = new PageImpl<>(Collections.singletonList(history));
         VerifyEmailResponse dto = new VerifyEmailResponse();
 
-        when(historyRepository.findByBatch_Id(batchId, pageable)).thenReturn(page);
+        when(batchRepository.findByIdAndUserId(batchId, testUserId)).thenReturn(Optional.of(new EmailVerificationBatch()));
+        when(historyRepository.findByBatchIdAndUser_Id(batchId, testUserId, pageable)).thenReturn(page);
         when(emailVerificationMapper.toDto(any(EmailVerificationHistory.class))).thenReturn(dto);
 
         // When
@@ -97,7 +105,7 @@ class ReportingServiceTest {
         List<DistinctLatestVerificationProjection> projections = Collections.singletonList(projection);
         DistinctEmailVerificationResultDto dto = DistinctEmailVerificationResultDto.builder().build();
 
-        when(historyRepository.findDistinctLatest()).thenReturn(projections);
+        when(historyRepository.findDistinctLatest(testUserId)).thenReturn(projections);
         when(batchResultMapper.toDistinctDto(any(DistinctLatestVerificationProjection.class))).thenReturn(dto);
 
         // When

@@ -29,6 +29,9 @@ public class EmailVerificationBatch {
 	@Column(name = "id", updatable = false, nullable = false)
 	private UUID id;
 
+	@Column(name = "user_id", nullable = false)
+	private Long userId;
+
 	@CreationTimestamp
 	@Column(name = "created_at", updatable = false)
 	private ZonedDateTime createdAt;

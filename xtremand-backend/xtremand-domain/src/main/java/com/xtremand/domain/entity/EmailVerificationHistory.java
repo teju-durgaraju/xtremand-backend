@@ -35,8 +35,10 @@ public class EmailVerificationHistory {
 	@SequenceGenerator(name = "xt_user_email_verification_history_id_seq", sequenceName = "xt_user_email_verification_history_id_seq", allocationSize = 1)
 	private Long id;
 
-	@Column(name = "user_id")
-	private Long userId;
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "user_id", nullable = false)
+	@ToString.Exclude
+	private User user;
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "batch_id")

@@ -2,11 +2,14 @@ package com.xtremand.email.verification.service;
 
 import com.xtremand.domain.entity.EmailVerificationBatch;
 import com.xtremand.domain.entity.EmailVerificationHistory;
+import com.xtremand.domain.entity.User;
 import com.xtremand.email.verification.config.ScoringProperties;
 import com.xtremand.email.verification.model.SmtpProbeResult;
 import com.xtremand.email.verification.model.VerificationResult;
 import com.xtremand.email.verification.repository.EmailVerificationHistoryRepository;
+import com.xtremand.email.verification.security.UserIdentityService;
 import com.xtremand.email.verification.service.verifier.*;
+import com.xtremand.user.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,14 +33,20 @@ public class EmailVerificationService {
 	private final SmtpProbeService smtpProbeService;
 	private final ScoringProperties scoringProperties;
 	private final EmailVerificationHistoryRepository historyRepository;
+	private final UserIdentityService userIdentityService;
+	private final UserRepository userRepository;
 
 	@Transactional
-	public VerificationResult verifyEmail(String email, Long userId) {
-		return this.verifyEmail(email, userId, null);
+	public VerificationResult verifyEmail(String email) {
+		return this.verifyEmail(email, null);
 	}
 
 	@Transactional
-	public VerificationResult verifyEmail(String email, Long userId, EmailVerificationBatch batch) {
+	public VerificationResult verifyEmail(String email, EmailVerificationBatch batch) {
+		Long userId = (batch != null) ? batch.getUserId() : userIdentityService.getRequiredUserId();
+		User user = userRepository.findById(userId)
+				.orElseThrow(() -> new IllegalStateException("User not found for ID: " + userId));
+
 		// 1. Initial Syntax Check
 		boolean isSyntaxValid = syntaxCheckProvider.isValid(email);
 		String domain = null;
@@ -48,7 +57,7 @@ public class EmailVerificationService {
 		if (!isSyntaxValid) {
 			VerificationResult result = VerificationResult.builder().email(email).syntaxCheck(false).score(0)
 					.status(EmailVerificationHistory.VerificationStatus.INVALID).build();
-			saveHistory(result, userId, domain, batch);
+			saveHistory(result, user, domain, batch);
 			return result;
 		}
 
@@ -74,7 +83,7 @@ public class EmailVerificationService {
 		VerificationResult finalResult = resultBuilder.build();
 
 		// 6. Save to history and return
-		saveHistory(finalResult, userId, domain, batch);
+		saveHistory(finalResult, user, domain, batch);
 		return finalResult;
 	}
 
@@ -142,9 +151,9 @@ public class EmailVerificationService {
 		builder.details(details);
 	}
 
-	private void saveHistory(VerificationResult result, Long userId, String domain, EmailVerificationBatch batch) {
+	private void saveHistory(VerificationResult result, User user, String domain, EmailVerificationBatch batch) {
 		EmailVerificationHistory history = new EmailVerificationHistory();
-		history.setUserId(userId);
+		history.setUser(user);
 		history.setEmail(result.getEmail());
 		history.setDomain(domain);
 		history.setBatch(batch);

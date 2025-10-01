@@ -2,11 +2,18 @@ package com.xtremand.email.verification.controller;
 
 import com.xtremand.domain.entity.EmailVerificationBatch;
 import com.xtremand.email.verification.model.VerificationResult;
-import com.xtremand.email.verification.model.dto.*;
+import com.xtremand.email.verification.model.dto.AccountKpiDto;
+import com.xtremand.email.verification.model.dto.BatchVerificationResultDto;
+import com.xtremand.email.verification.model.dto.DistinctEmailVerificationResultDto;
+import com.xtremand.email.verification.model.dto.EmailVerificationBatchDto;
+import com.xtremand.email.verification.model.dto.VerifyBatchRequest;
+import com.xtremand.email.verification.model.dto.VerifyEmailRequest;
+import com.xtremand.email.verification.model.dto.VerifyEmailResponse;
 import com.xtremand.email.verification.model.mapper.BatchResultMapper;
 import com.xtremand.email.verification.model.mapper.EmailVerificationMapper;
 import com.xtremand.email.verification.service.BatchVerificationService;
 import com.xtremand.email.verification.service.EmailVerificationService;
+import com.xtremand.email.verification.service.KpiAggregationService;
 import com.xtremand.email.verification.service.ReportingService;
 
 import jakarta.validation.Valid;
@@ -29,20 +36,21 @@ public class EmailVerificationController {
     private final EmailVerificationService emailVerificationService;
     private final BatchVerificationService batchVerificationService;
     private final ReportingService reportingService;
+    private final KpiAggregationService kpiAggregationService;
     private final EmailVerificationMapper emailVerificationMapper;
     private final BatchResultMapper batchResultMapper;
 
     @PostMapping
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<VerifyEmailResponse> verifyEmail(@Valid @RequestBody VerifyEmailRequest request) {
-        VerificationResult result = emailVerificationService.verifyEmail(request.getEmail(), request.getUserId());
+        VerificationResult result = emailVerificationService.verifyEmail(request.getEmail());
         return ResponseEntity.ok(VerifyEmailResponse.fromVerificationResult(result));
     }
 
     @PostMapping("/batch")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<BatchVerificationResultDto> verifyBatch(@Valid @RequestBody VerifyBatchRequest request) {
-        EmailVerificationBatch batch = batchVerificationService.startBatchVerification(request.getEmails(), request.getUserId());
+        EmailVerificationBatch batch = batchVerificationService.startBatchVerification(request.getEmails());
         BatchVerificationResultDto responseDto = batchResultMapper.toBatchResultDto(batch);
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(responseDto);
     }
@@ -66,5 +74,12 @@ public class EmailVerificationController {
     public ResponseEntity<List<DistinctEmailVerificationResultDto>> getDistinctLatestResults() {
         List<DistinctEmailVerificationResultDto> results = reportingService.getDistinctLatestResults();
         return ResponseEntity.ok(results);
+    }
+
+    @GetMapping("/kpi")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<AccountKpiDto> getAccountKpi() {
+        AccountKpiDto kpis = kpiAggregationService.getAccountKpis();
+        return ResponseEntity.ok(kpis);
     }
 }

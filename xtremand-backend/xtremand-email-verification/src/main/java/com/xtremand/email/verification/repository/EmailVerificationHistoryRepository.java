@@ -1,7 +1,10 @@
 package com.xtremand.email.verification.repository;
 
+import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
@@ -15,6 +18,21 @@ import com.xtremand.domain.entity.EmailVerificationHistory;
 @Repository
 public interface EmailVerificationHistoryRepository extends JpaRepository<EmailVerificationHistory, Long> {
 
+    String ACCOUNT_KPI_QUERY = """
+        SELECT
+            COALESCE(COUNT(CASE WHEN status = 'VALID' THEN 1 END), 0) AS validEmails,
+            COALESCE(COUNT(CASE WHEN status = 'INVALID' THEN 1 END), 0) AS invalidEmails,
+            COALESCE(COUNT(CASE WHEN status = 'RISKY' THEN 1 END), 0) AS riskyEmails,
+            COALESCE(COUNT(CASE WHEN status = 'UNKNOWN' THEN 1 END), 0) AS unknownEmails,
+            COALESCE(COUNT(*), 0) AS totalProcessed,
+            COALESCE(AVG(score), 0) AS qualityScore
+        FROM
+            xt_user_email_verification_history
+        """;
+
+    @Query(nativeQuery = true, value = ACCOUNT_KPI_QUERY)
+    Optional<KpiQueryResult> getAccountKpis();
+
     Page<EmailVerificationHistory> findByBatch_Id(UUID batchId, Pageable pageable);
 
     String FIND_DISTINCT_LATEST_QUERY = """
@@ -23,7 +41,7 @@ public interface EmailVerificationHistoryRepository extends JpaRepository<EmailV
                 h.*,
                 ROW_NUMBER() OVER (PARTITION BY h.email ORDER BY h.checked_at DESC) as rn
             FROM
-                xtremand_production.xt_user_email_verification_history h
+                xt_user_email_verification_history h
         )
         SELECT
             id,
@@ -50,6 +68,15 @@ public interface EmailVerificationHistoryRepository extends JpaRepository<EmailV
     @Query(nativeQuery = true, value = FIND_DISTINCT_LATEST_QUERY)
     List<DistinctLatestVerificationProjection> findDistinctLatest();
 
+    interface KpiQueryResult {
+        long getValidEmails();
+        long getInvalidEmails();
+        long getRiskyEmails();
+        long getUnknownEmails();
+        long getTotalProcessed();
+        BigDecimal getQualityScore();
+    }
+
     interface DistinctLatestVerificationProjection {
         Long getId();
         String getEmail();
@@ -57,7 +84,7 @@ public interface EmailVerificationHistoryRepository extends JpaRepository<EmailV
         String getStatus();
         int getScore();
         String getConfidence();
-        Instant getLastVerifiedAt();
+        OffsetDateTime getLastVerifiedAt();
         boolean getSyntaxCheck();
         boolean getMxCheck();
         boolean getDisposableCheck();

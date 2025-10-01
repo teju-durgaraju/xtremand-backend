@@ -1,8 +1,4 @@
-error-codes:
+# Dummy error codes to satisfy test context creation.
+errors:
   DUMMY_CODE:
-    codeId: 9999
-    title: "Dummy Error"
     message: "This is a dummy error for testing."
-    category: "TEST"
-    severity: "INFO"
-    recoverable: true

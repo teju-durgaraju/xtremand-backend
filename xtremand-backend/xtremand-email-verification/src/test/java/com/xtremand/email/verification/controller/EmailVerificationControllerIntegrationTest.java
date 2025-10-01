@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.hamcrest.Matchers.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -53,7 +54,7 @@ class EmailVerificationControllerIntegrationTest {
     @ComponentScan(basePackages = {"com.xtremand.email.verification", "com.xtremand.auth", "com.xtremand.user", "com.xtremand.common.email", "com.xtremand.common.error"})
     static class TestConfiguration {
         @Bean
-        public ErrorCodeRegistry errorCodeRegistry(@Value("classpath*:error-codes.yaml") Resource[] yamls) {
+        public ErrorCodeRegistry errorCodeRegistry(@Value("classpath:error-codes.yaml") Resource[] yamls) {
             return new ErrorCodeRegistry(yamls);
         }
     }
@@ -86,6 +87,7 @@ class EmailVerificationControllerIntegrationTest {
         request.setUserId(1L);
 
         mockMvc.perform(post("/api/v1/email/verify/batch")
+                .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isAccepted())

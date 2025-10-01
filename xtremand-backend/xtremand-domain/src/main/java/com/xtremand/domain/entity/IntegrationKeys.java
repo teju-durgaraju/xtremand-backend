@@ -21,10 +21,10 @@ public class IntegrationKeys {
 	@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "ai_configurations_seq_gen")
 	private Long id;
 
-	@Column(name = "key")
+	@Column(name = "\"key\"")
 	private String key;
 
-	@Column(name = "value")
+	@Column(name = "\"value\"")
 	private String value;
 
 }

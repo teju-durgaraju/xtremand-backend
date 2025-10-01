@@ -13,7 +13,5 @@ public class VerifyEmailRequest {
     @Email(message = "Email should be valid.")
     private String email;
 
-    private Long userId;
-
     private boolean forceSmtp = false; // Not yet implemented, but here for future use
 }

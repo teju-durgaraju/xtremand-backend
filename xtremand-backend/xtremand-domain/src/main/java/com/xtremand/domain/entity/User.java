@@ -13,6 +13,8 @@ import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -67,9 +69,8 @@ public class User extends BaseEntity {
 	@Column(name = "is_email_verified", nullable = false)
 	private boolean emailVerified;
 
-	@Convert(disableConversion = true)
-	@JdbcTypeCode(SqlTypes.NAMED_ENUM)
-	@Column(columnDefinition = "user_status", nullable = false)
+	@Enumerated(EnumType.STRING)
+	@Column(name = "status", nullable = false)
 	private UserStatus status;
 
 	@Column(nullable = false)

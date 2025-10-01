@@ -12,6 +12,7 @@ import java.util.UUID;
 @Builder
 public class EmailVerificationBatchDto {
     private UUID batchId;
+    private Long userId;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'", timezone = "UTC")
     private ZonedDateTime createdAt;

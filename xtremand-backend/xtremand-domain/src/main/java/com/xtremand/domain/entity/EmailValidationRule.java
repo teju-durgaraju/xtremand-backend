@@ -25,7 +25,7 @@ public class EmailValidationRule {
 	@Column(name = "rule_type", nullable = false)
 	private RuleType ruleType;
 
-	@Column(name = "value", nullable = false)
+	@Column(name = "\"value\"", nullable = false)
 	private String value;
 
 	@Column(name = "description")

@@ -116,6 +116,10 @@
             <artifactId>spring-security-test</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>com.xtremand</groupId>
+            <artifactId>xtremand-user</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

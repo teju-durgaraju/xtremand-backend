@@ -33,14 +33,14 @@ public class ReportingService {
 
     public Page<EmailVerificationBatchDto> getBatchSummaries(Pageable pageable) {
         Long userId = userIdentityService.getRequiredUserId();
-        return batchRepository.findByUserId(userId, pageable)
+        return batchRepository.findByUser_Id(userId, pageable)
                 .map(batchResultMapper::toBatchDto);
     }
 
     public Page<VerifyEmailResponse> getBatchEmails(UUID batchId, Pageable pageable) {
         Long userId = userIdentityService.getRequiredUserId();
         // First, verify that the batch belongs to the user to prevent data leakage
-        batchRepository.findByIdAndUserId(batchId, userId)
+        batchRepository.findByIdAndUser_Id(batchId, userId)
                 .orElseThrow(() -> new AccessDeniedException("Access denied to batch " + batchId));
 
         return historyRepository.findByBatchIdAndUser_Id(batchId, userId, pageable)

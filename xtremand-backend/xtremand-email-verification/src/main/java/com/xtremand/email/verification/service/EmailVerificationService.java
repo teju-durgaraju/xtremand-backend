@@ -43,7 +43,7 @@ public class EmailVerificationService {
 
 	@Transactional
 	public VerificationResult verifyEmail(String email, EmailVerificationBatch batch) {
-		Long userId = (batch != null) ? batch.getUserId() : userIdentityService.getRequiredUserId();
+		Long userId = (batch != null) ? batch.getUser().getId() : userIdentityService.getRequiredUserId();
 		User user = userRepository.findById(userId)
 				.orElseThrow(() -> new IllegalStateException("User not found for ID: " + userId));
 

@@ -67,7 +67,7 @@ class ReportingServiceTest {
         Page<EmailVerificationBatch> page = new PageImpl<>(Collections.singletonList(batch));
         EmailVerificationBatchDto dto = EmailVerificationBatchDto.builder().build();
 
-        when(batchRepository.findByUserId(testUserId, pageable)).thenReturn(page);
+        when(batchRepository.findByUser_Id(testUserId, pageable)).thenReturn(page);
         when(batchResultMapper.toBatchDto(any(EmailVerificationBatch.class))).thenReturn(dto);
 
         // When
@@ -86,7 +86,7 @@ class ReportingServiceTest {
         Page<EmailVerificationHistory> page = new PageImpl<>(Collections.singletonList(history));
         VerifyEmailResponse dto = new VerifyEmailResponse();
 
-        when(batchRepository.findByIdAndUserId(batchId, testUserId)).thenReturn(Optional.of(new EmailVerificationBatch()));
+        when(batchRepository.findByIdAndUser_Id(batchId, testUserId)).thenReturn(Optional.of(new EmailVerificationBatch()));
         when(historyRepository.findByBatchIdAndUser_Id(batchId, testUserId, pageable)).thenReturn(page);
         when(emailVerificationMapper.toDto(any(EmailVerificationHistory.class))).thenReturn(dto);
 

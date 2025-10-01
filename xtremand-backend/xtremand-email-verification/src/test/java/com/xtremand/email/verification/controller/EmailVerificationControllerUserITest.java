@@ -76,7 +76,7 @@ class EmailVerificationControllerUserITest {
     private void createTestData() {
         // User A's data
         EmailVerificationBatch batchA = new EmailVerificationBatch();
-        batchA.setUserId(userA.getId());
+        batchA.setUser(userA);
         batchA.setTotalEmails(1);
         batchRepository.save(batchA);
 
@@ -92,7 +92,7 @@ class EmailVerificationControllerUserITest {
 
         // User B's data
         EmailVerificationBatch batchB = new EmailVerificationBatch();
-        batchB.setUserId(userB.getId());
+        batchB.setUser(userB);
         batchB.setTotalEmails(1);
         batchRepository.save(batchB);
 
@@ -121,7 +121,7 @@ class EmailVerificationControllerUserITest {
     @Test
     void getBatchEmails_asUserAForUserBBatch_shouldReturnAccessDenied() throws Exception {
         createTestData();
-        EmailVerificationBatch batchB = batchRepository.findByUserId(userB.getId(), org.springframework.data.domain.Pageable.unpaged()).getContent().get(0);
+        EmailVerificationBatch batchB = batchRepository.findByUser_Id(userB.getId(), org.springframework.data.domain.Pageable.unpaged()).getContent().get(0);
 
         mockMvc.perform(get("/api/v1/email/verify/batch/{batchId}/emails", batchB.getId())
                         .with(jwt().jwt(j -> j.claim("user_id", userA.getId()))))

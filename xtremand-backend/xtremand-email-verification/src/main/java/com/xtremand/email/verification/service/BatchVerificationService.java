@@ -1,56 +1,64 @@
 package com.xtremand.email.verification.service;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.xtremand.domain.entity.EmailVerificationBatch;
 import com.xtremand.domain.entity.EmailVerificationHistory;
+import com.xtremand.domain.entity.User;
 import com.xtremand.email.verification.config.AsyncConfig;
 import com.xtremand.email.verification.model.VerificationResult;
 import com.xtremand.email.verification.repository.EmailVerificationBatchRepository;
 import com.xtremand.email.verification.security.UserIdentityService;
+import com.xtremand.user.repository.UserRepository;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Async;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class BatchVerificationService {
 
-    private final EmailVerificationService emailVerificationService;
-    private final EmailVerificationBatchRepository batchRepository;
-    private final UserIdentityService userIdentityService;
+	private final EmailVerificationService emailVerificationService;
+	private final EmailVerificationBatchRepository batchRepository;
+	private final UserIdentityService userIdentityService;
+	private final UserRepository userRepository;
 
-    @Transactional
-    public EmailVerificationBatch startBatchVerification(List<String> emails) {
-        Long userId = userIdentityService.getRequiredUserId();
-        log.info("Starting batch verification for {} emails. User ID: {}", emails.size(), userId);
+	@Transactional
+	public EmailVerificationBatch startBatchVerification(List<String> emails) {
+		Long userId = userIdentityService.getRequiredUserId();
+		log.info("Starting batch verification for {} emails. User ID: {}", emails.size(), userId);
 
-        // 1. Create and save the initial batch record
-        EmailVerificationBatch batch = new EmailVerificationBatch();
-        batch.setTotalEmails(emails.size());
-        batch.setUserId(userId);
-        EmailVerificationBatch savedBatch = batchRepository.save(batch);
+		// 1. Create and save the initial batch record
+		EmailVerificationBatch batch = new EmailVerificationBatch();
+		batch.setTotalEmails(emails.size());
+		User user = userRepository.findById(userId)
+				.orElseThrow(() -> new UsernameNotFoundException("User not found with id: " + userId));
+		batch.setUser(user);
+		EmailVerificationBatch savedBatch = batchRepository.save(batch);
 
-        // 2. Start the async processing
-        processBatch(emails, savedBatch);
+		// 2. Start the async processing
+		processBatch(emails, savedBatch);
 
-        // 3. Return the initial batch object with its ID
-        return savedBatch;
-    }
+		// 3. Return the initial batch object with its ID
+		return savedBatch;
+	}
 
-    @Async(AsyncConfig.BATCH_VERIFICATION_EXECUTOR)
-    @Transactional
-    public CompletableFuture<Void> processBatch(List<String> emails, EmailVerificationBatch batch) {
-        log.info("Executing async batch verification for {} emails. Batch ID: {}", emails.size(), batch.getId());
-        List<VerificationResult> results = new ArrayList<>();
-        Long userId = batch.getUserId(); // Retrieve userId from the batch entity
+	@Async(AsyncConfig.BATCH_VERIFICATION_EXECUTOR)
+	@Transactional
+	public CompletableFuture<Void> processBatch(List<String> emails, EmailVerificationBatch batch) {
+		log.info("Executing async batch verification for {} emails. Batch ID: {}", emails.size(), batch.getId());
+		List<VerificationResult> results = new ArrayList<>();
+		Long userId = batch.getUser().getId(); // Retrieve userId from the batch entity
 
-        for (String email : emails) {
+		for (String email : emails) {
             try {
                 // Pass the batch object to the verification service
                 VerificationResult result = emailVerificationService.verifyEmail(email, batch);

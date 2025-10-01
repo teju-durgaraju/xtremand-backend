@@ -2,8 +2,9 @@ package com.xtremand.email.verification.service;
 
 import com.xtremand.email.verification.model.dto.AccountKpiDto;
 import com.xtremand.email.verification.repository.EmailVerificationHistoryRepository;
-import com.xtremand.email.verification.security.UserIdentityService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,12 +16,12 @@ import java.math.RoundingMode;
 public class KpiAggregationService {
 
     private final EmailVerificationHistoryRepository repository;
-    private final UserIdentityService userIdentityService;
 
     @Transactional(readOnly = true)
     public AccountKpiDto getAccountKpis() {
-        Long userId = userIdentityService.getRequiredUserId();
-        return repository.getAccountKpis(userId)
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String userEmail = authentication.getName();
+        return repository.getAccountKpis(userEmail)
                 .map(this::buildSuccessResponse)
                 .orElse(buildDefaultResponse());
     }

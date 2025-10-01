@@ -10,19 +10,21 @@ import com.xtremand.email.verification.model.mapper.EmailVerificationMapper;
 import com.xtremand.email.verification.repository.EmailVerificationBatchRepository;
 import com.xtremand.email.verification.repository.EmailVerificationHistoryRepository;
 import com.xtremand.email.verification.repository.EmailVerificationHistoryRepository.DistinctLatestVerificationProjection;
-import com.xtremand.email.verification.security.UserIdentityService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 
-import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -30,7 +32,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -46,18 +48,21 @@ class ReportingServiceTest {
     @Mock
     private EmailVerificationMapper emailVerificationMapper;
     @Mock
-    private UserIdentityService userIdentityService;
+    private Authentication authentication;
 
     @InjectMocks
     private ReportingService reportingService;
 
     private Pageable pageable;
-    private final Long testUserId = 1L;
+    private final String testUserEmail = "test@example.com";
 
     @BeforeEach
     void setUp() {
         pageable = PageRequest.of(0, 10);
-        when(userIdentityService.getRequiredUserId()).thenReturn(testUserId);
+        SecurityContext securityContext = Mockito.mock(SecurityContext.class);
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        SecurityContextHolder.setContext(securityContext);
+        when(authentication.getName()).thenReturn(testUserEmail);
     }
 
     @Test
@@ -67,7 +72,7 @@ class ReportingServiceTest {
         Page<EmailVerificationBatch> page = new PageImpl<>(Collections.singletonList(batch));
         EmailVerificationBatchDto dto = EmailVerificationBatchDto.builder().build();
 
-        when(batchRepository.findByUser_Id(testUserId, pageable)).thenReturn(page);
+        when(batchRepository.findByUser_Email(testUserEmail, pageable)).thenReturn(page);
         when(batchResultMapper.toBatchDto(any(EmailVerificationBatch.class))).thenReturn(dto);
 
         // When
@@ -86,8 +91,8 @@ class ReportingServiceTest {
         Page<EmailVerificationHistory> page = new PageImpl<>(Collections.singletonList(history));
         VerifyEmailResponse dto = new VerifyEmailResponse();
 
-        when(batchRepository.findByIdAndUser_Id(batchId, testUserId)).thenReturn(Optional.of(new EmailVerificationBatch()));
-        when(historyRepository.findByBatchIdAndUser_Id(batchId, testUserId, pageable)).thenReturn(page);
+        when(batchRepository.findByIdAndUser_Email(batchId, testUserEmail)).thenReturn(Optional.of(new EmailVerificationBatch()));
+        when(historyRepository.findByBatchIdAndUser_Email(batchId, testUserEmail, pageable)).thenReturn(page);
         when(emailVerificationMapper.toDto(any(EmailVerificationHistory.class))).thenReturn(dto);
 
         // When
@@ -105,7 +110,7 @@ class ReportingServiceTest {
         List<DistinctLatestVerificationProjection> projections = Collections.singletonList(projection);
         DistinctEmailVerificationResultDto dto = DistinctEmailVerificationResultDto.builder().build();
 
-        when(historyRepository.findDistinctLatest(testUserId)).thenReturn(projections);
+        when(historyRepository.findDistinctLatest(testUserEmail)).thenReturn(projections);
         when(batchResultMapper.toDistinctDto(any(DistinctLatestVerificationProjection.class))).thenReturn(dto);
 
         // When

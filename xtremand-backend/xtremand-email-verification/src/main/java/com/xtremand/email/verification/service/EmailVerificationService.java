@@ -7,12 +7,14 @@ import com.xtremand.email.verification.config.ScoringProperties;
 import com.xtremand.email.verification.model.SmtpProbeResult;
 import com.xtremand.email.verification.model.VerificationResult;
 import com.xtremand.email.verification.repository.EmailVerificationHistoryRepository;
-import com.xtremand.email.verification.security.UserIdentityService;
 import com.xtremand.email.verification.service.verifier.*;
 import com.xtremand.user.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,7 +35,6 @@ public class EmailVerificationService {
 	private final SmtpProbeService smtpProbeService;
 	private final ScoringProperties scoringProperties;
 	private final EmailVerificationHistoryRepository historyRepository;
-	private final UserIdentityService userIdentityService;
 	private final UserRepository userRepository;
 
 	@Transactional
@@ -43,9 +44,15 @@ public class EmailVerificationService {
 
 	@Transactional
 	public VerificationResult verifyEmail(String email, EmailVerificationBatch batch) {
-		Long userId = (batch != null) ? batch.getUser().getId() : userIdentityService.getRequiredUserId();
-		User user = userRepository.findById(userId)
-				.orElseThrow(() -> new IllegalStateException("User not found for ID: " + userId));
+		User user;
+		if (batch != null) {
+			user = batch.getUser();
+		} else {
+			Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+			String userEmail = authentication.getName();
+			user = userRepository.findByEmail(userEmail)
+					.orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + userEmail));
+		}
 
 		// 1. Initial Syntax Check
 		boolean isSyntaxValid = syntaxCheckProvider.isValid(email);

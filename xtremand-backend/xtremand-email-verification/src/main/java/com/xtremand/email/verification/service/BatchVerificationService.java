@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 import org.springframework.scheduling.annotation.Async;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,7 +17,6 @@ import com.xtremand.domain.entity.User;
 import com.xtremand.email.verification.config.AsyncConfig;
 import com.xtremand.email.verification.model.VerificationResult;
 import com.xtremand.email.verification.repository.EmailVerificationBatchRepository;
-import com.xtremand.email.verification.security.UserIdentityService;
 import com.xtremand.user.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -28,19 +29,19 @@ public class BatchVerificationService {
 
 	private final EmailVerificationService emailVerificationService;
 	private final EmailVerificationBatchRepository batchRepository;
-	private final UserIdentityService userIdentityService;
 	private final UserRepository userRepository;
 
 	@Transactional
 	public EmailVerificationBatch startBatchVerification(List<String> emails) {
-		Long userId = userIdentityService.getRequiredUserId();
-		log.info("Starting batch verification for {} emails. User ID: {}", emails.size(), userId);
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+		String userEmail = authentication.getName();
+		log.info("Starting batch verification for {} emails. User Email: {}", emails.size(), userEmail);
 
 		// 1. Create and save the initial batch record
 		EmailVerificationBatch batch = new EmailVerificationBatch();
 		batch.setTotalEmails(emails.size());
-		User user = userRepository.findById(userId)
-				.orElseThrow(() -> new UsernameNotFoundException("User not found with id: " + userId));
+		User user = userRepository.findByEmail(userEmail)
+				.orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + userEmail));
 		batch.setUser(user);
 		EmailVerificationBatch savedBatch = batchRepository.save(batch);
 
@@ -56,7 +57,6 @@ public class BatchVerificationService {
 	public CompletableFuture<Void> processBatch(List<String> emails, EmailVerificationBatch batch) {
 		log.info("Executing async batch verification for {} emails. Batch ID: {}", emails.size(), batch.getId());
 		List<VerificationResult> results = new ArrayList<>();
-		Long userId = batch.getUser().getId(); // Retrieve userId from the batch entity
 
 		for (String email : emails) {
             try {

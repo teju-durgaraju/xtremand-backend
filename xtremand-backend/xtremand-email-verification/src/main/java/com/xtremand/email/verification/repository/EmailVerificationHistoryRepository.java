@@ -19,56 +19,58 @@ import com.xtremand.domain.entity.EmailVerificationHistory;
 public interface EmailVerificationHistoryRepository extends JpaRepository<EmailVerificationHistory, Long> {
 
     String ACCOUNT_KPI_QUERY = """
-        SELECT
-            COALESCE(COUNT(CASE WHEN status = 'VALID' THEN 1 END), 0) AS validEmails,
-            COALESCE(COUNT(CASE WHEN status = 'INVALID' THEN 1 END), 0) AS invalidEmails,
-            COALESCE(COUNT(CASE WHEN status = 'RISKY' THEN 1 END), 0) AS riskyEmails,
-            COALESCE(COUNT(CASE WHEN status = 'UNKNOWN' THEN 1 END), 0) AS unknownEmails,
-            COALESCE(COUNT(*), 0) AS totalProcessed,
-            COALESCE(AVG(score), 0) AS qualityScore
-        FROM
-            xt_user_email_verification_history
-        WHERE user_id = :userId
-        """;
-
-    @Query(nativeQuery = true, value = ACCOUNT_KPI_QUERY)
-    Optional<KpiQueryResult> getAccountKpis(@Param("userId") Long userId);
-
-    Page<EmailVerificationHistory> findByBatchIdAndUser_Id(UUID batchId, Long userId, Pageable pageable);
-
-    String FIND_DISTINCT_LATEST_QUERY = """
-        WITH RankedHistory AS (
             SELECT
-                h.*,
-                ROW_NUMBER() OVER (PARTITION BY h.email ORDER BY h.checked_at DESC) as rn
+                COALESCE(COUNT(CASE WHEN h.status = 'VALID' THEN 1 END), 0) AS validEmails,
+                COALESCE(COUNT(CASE WHEN h.status = 'INVALID' THEN 1 END), 0) AS invalidEmails,
+                COALESCE(COUNT(CASE WHEN h.status = 'RISKY' THEN 1 END), 0) AS riskyEmails,
+                COALESCE(COUNT(CASE WHEN h.status = 'UNKNOWN' THEN 1 END), 0) AS unknownEmails,
+                COALESCE(COUNT(h.id), 0) AS totalProcessed,
+                COALESCE(AVG(h.score), 0) AS qualityScore
             FROM
                 xt_user_email_verification_history h
-            WHERE h.user_id = :userId
-        )
-        SELECT
-            id,
-            email,
-            domain,
-            status,
-            score,
-            confidence,
-            checked_at AS "lastVerifiedAt",
-            syntax_check AS syntaxCheck,
-            mx_check AS mxCheck,
-            disposable_check AS disposableCheck,
-            role_based_check AS roleBasedCheck,
-            catch_all_check AS catchAllCheck,
-            blacklist_check AS blacklistCheck,
-            (case when smtp_check_status = 'DELIVERABLE' then true else false end) AS smtpCheck,
-            (case when smtp_ping_status = 'SUCCESS' then true else false end) AS smtpPing
-        FROM
-            RankedHistory
-        WHERE
-            rn = 1
-        """;
+            JOIN xt_users u ON h.user_id = u.id
+            WHERE u.email = :userEmail
+            """;
+
+    @Query(nativeQuery = true, value = ACCOUNT_KPI_QUERY)
+    Optional<KpiQueryResult> getAccountKpis(@Param("userEmail") String userEmail);
+
+    Page<EmailVerificationHistory> findByBatchIdAndUser_Email(UUID batchId, String email, Pageable pageable);
+
+    String FIND_DISTINCT_LATEST_QUERY = """
+            WITH RankedHistory AS (
+                SELECT
+                    h.*,
+                    ROW_NUMBER() OVER (PARTITION BY h.email ORDER BY h.checked_at DESC) as rn
+                FROM
+                    xt_user_email_verification_history h
+                JOIN xt_users u ON h.user_id = u.id
+                WHERE u.email = :userEmail
+            )
+            SELECT
+                id,
+                email,
+                domain,
+                status,
+                score,
+                confidence,
+                checked_at AS "lastVerifiedAt",
+                syntax_check AS syntaxCheck,
+                mx_check AS mxCheck,
+                disposable_check AS disposableCheck,
+                role_based_check AS roleBasedCheck,
+                catch_all_check AS catchAllCheck,
+                blacklist_check AS blacklistCheck,
+                (case when smtp_check_status = 'DELIVERABLE' then true else false end) AS smtpCheck,
+                (case when smtp_ping_status = 'SUCCESS' then true else false end) AS smtpPing
+            FROM
+                RankedHistory
+            WHERE
+                rn = 1
+            """;
 
     @Query(nativeQuery = true, value = FIND_DISTINCT_LATEST_QUERY)
-    List<DistinctLatestVerificationProjection> findDistinctLatest(@Param("userId") Long userId);
+    List<DistinctLatestVerificationProjection> findDistinctLatest(@Param("userEmail") String userEmail);
 
     interface KpiQueryResult {
         long getValidEmails();

@@ -11,6 +11,6 @@ import java.util.UUID;
 
 @Repository
 public interface EmailVerificationBatchRepository extends JpaRepository<EmailVerificationBatch, UUID> {
-    Page<EmailVerificationBatch> findByUser_Id(Long userId, Pageable pageable);
-    Optional<EmailVerificationBatch> findByIdAndUser_Id(UUID id, Long userId);
+    Page<EmailVerificationBatch> findByUser_Email(String email, Pageable pageable);
+    Optional<EmailVerificationBatch> findByIdAndUser_Email(UUID id, String email);
 }

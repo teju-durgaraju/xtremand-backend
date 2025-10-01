@@ -16,10 +16,11 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 import static org.hamcrest.Matchers.*;
+import static org.mockito.Mockito.mock;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -36,14 +38,18 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Transactional
-@WithMockUser
 class EmailVerificationControllerUserITest {
 
     @SpringBootApplication
     @EnableJpaRepositories(basePackages = {"com.xtremand.email.verification.repository", "com.xtremand.user.repository"})
     @EntityScan(basePackages = {"com.xtremand.domain.entity"})
     @ComponentScan(basePackages = "com.xtremand.email.verification")
-    static class TestConfiguration {}
+    static class TestConfiguration {
+        @Bean
+        public JwtDecoder jwtDecoder() {
+            return mock(JwtDecoder.class);
+        }
+    }
 
     @Autowired
     private MockMvc mockMvc;
@@ -112,7 +118,7 @@ class EmailVerificationControllerUserITest {
         createTestData();
 
         mockMvc.perform(get("/api/v1/email/verify/batch")
-                        .with(jwt().jwt(j -> j.claim("user_id", userA.getId()))))
+                        .with(jwt().jwt(j -> j.claim("sub", userA.getEmail()))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content", hasSize(1)))
                 .andExpect(jsonPath("$.content[0].userId", is(userA.getId().intValue())));
@@ -121,10 +127,10 @@ class EmailVerificationControllerUserITest {
     @Test
     void getBatchEmails_asUserAForUserBBatch_shouldReturnAccessDenied() throws Exception {
         createTestData();
-        EmailVerificationBatch batchB = batchRepository.findByUser_Id(userB.getId(), org.springframework.data.domain.Pageable.unpaged()).getContent().get(0);
+        EmailVerificationBatch batchB = batchRepository.findByUser_Email(userB.getEmail(), org.springframework.data.domain.Pageable.unpaged()).getContent().get(0);
 
         mockMvc.perform(get("/api/v1/email/verify/batch/{batchId}/emails", batchB.getId())
-                        .with(jwt().jwt(j -> j.claim("user_id", userA.getId()))))
+                        .with(jwt().jwt(j -> j.claim("sub", userA.getEmail()))))
                 .andExpect(status().isForbidden());
     }
 
@@ -133,7 +139,7 @@ class EmailVerificationControllerUserITest {
         createTestData();
 
         mockMvc.perform(get("/api/v1/email/verify/distinct-latest")
-                        .with(jwt().jwt(j -> j.claim("user_id", userB.getId()))))
+                        .with(jwt().jwt(j -> j.claim("sub", userB.getEmail()))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath("$[0].email", is("testB@example.com")));
@@ -144,7 +150,7 @@ class EmailVerificationControllerUserITest {
         createTestData();
 
         mockMvc.perform(get("/api/v1/email/verify/kpi")
-                        .with(jwt().jwt(j -> j.claim("user_id", userA.getId()))))
+                        .with(jwt().jwt(j -> j.claim("sub", userA.getEmail()))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accountKpi.totalProcessed", is(1)))
                 .andExpect(jsonPath("$.accountKpi.validEmails", is(1)))
@@ -157,7 +163,7 @@ class EmailVerificationControllerUserITest {
         request.setEmail("test@example.com");
 
         mockMvc.perform(post("/api/v1/email/verify")
-                        .with(jwt().jwt(j -> j.claim("user_id", userA.getId())))
+                        .with(jwt().jwt(j -> j.claim("sub", userA.getEmail())))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -170,7 +176,7 @@ class EmailVerificationControllerUserITest {
         request.setEmails(List.of("batch1@example.com", "batch2@example.com"));
 
         mockMvc.perform(post("/api/v1/email/verify/batch")
-                        .with(jwt().jwt(j -> j.claim("user_id", userA.getId())))
+                        .with(jwt().jwt(j -> j.claim("sub", userA.getEmail())))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isAccepted())

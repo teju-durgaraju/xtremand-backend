@@ -2,19 +2,22 @@ package com.xtremand.email.verification.service;
 
 import com.xtremand.email.verification.model.dto.AccountKpiDto;
 import com.xtremand.email.verification.repository.EmailVerificationHistoryRepository;
-import com.xtremand.email.verification.security.UserIdentityService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.math.BigDecimal;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -23,13 +26,13 @@ class KpiAggregationServiceTest {
     @Mock
     private EmailVerificationHistoryRepository repository;
 
-    @Mock
-    private UserIdentityService userIdentityService;
-
     @InjectMocks
     private KpiAggregationService kpiAggregationService;
 
     private EmailVerificationHistoryRepository.KpiQueryResult mockQueryResult;
+
+    @Mock
+    private Authentication authentication;
 
     @BeforeEach
     void setUp() {
@@ -56,16 +59,19 @@ class KpiAggregationServiceTest {
             }
             @Override
             public BigDecimal getQualityScore() {
-                // This is not used by the service anymore, but the interface requires it.
                 return BigDecimal.ZERO;
             }
         };
+
+        SecurityContext securityContext = Mockito.mock(SecurityContext.class);
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        SecurityContextHolder.setContext(securityContext);
     }
 
     @Test
     void getAccountKpis_shouldReturnCalculatedKpis_whenDataExists() {
-        when(userIdentityService.getRequiredUserId()).thenReturn(1L);
-        when(repository.getAccountKpis(anyLong())).thenReturn(Optional.of(mockQueryResult));
+        when(authentication.getName()).thenReturn("test@example.com");
+        when(repository.getAccountKpis(anyString())).thenReturn(Optional.of(mockQueryResult));
 
         AccountKpiDto response = kpiAggregationService.getAccountKpis();
         AccountKpiDto.AccountKpi accountKpi = response.getAccountKpi();
@@ -82,8 +88,8 @@ class KpiAggregationServiceTest {
 
     @Test
     void getAccountKpis_shouldReturnDefaultKpis_whenNoDataExists() {
-        when(userIdentityService.getRequiredUserId()).thenReturn(1L);
-        when(repository.getAccountKpis(anyLong())).thenReturn(Optional.empty());
+        when(authentication.getName()).thenReturn("test@example.com");
+        when(repository.getAccountKpis(anyString())).thenReturn(Optional.empty());
 
         AccountKpiDto response = kpiAggregationService.getAccountKpis();
         AccountKpiDto.AccountKpi accountKpi = response.getAccountKpi();

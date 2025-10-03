@@ -17,6 +17,34 @@ import com.xtremand.domain.entity.EmailVerificationHistory;
 
 @Repository
 public interface EmailVerificationHistoryRepository extends JpaRepository<EmailVerificationHistory, Long> {
+    String CHART_DATA_QUERY = """
+        SELECT
+            TO_CHAR(h.checked_at, :groupBy) AS period,
+            h.status AS status,
+            COUNT(h.id) AS count
+        FROM
+            xtremand_production.xt_user_email_verification_history h
+        JOIN xtremand_production.xt_users u ON h.user_id = u.id
+        WHERE
+            u.email = :userEmail AND h.checked_at >= :startDate
+        GROUP BY
+            period, h.status
+        ORDER BY
+            period
+    """;
+
+    @Query(nativeQuery = true, value = CHART_DATA_QUERY)
+    List<ChartDataProjection> findChartDataByUserEmail(
+        @Param("userEmail") String userEmail,
+        @Param("startDate") Instant startDate,
+        @Param("groupBy") String groupBy
+    );
+
+    interface ChartDataProjection {
+        String getPeriod();
+        String getStatus();
+        long getCount();
+    }
 
     String ACCOUNT_KPI_QUERY = """
             SELECT

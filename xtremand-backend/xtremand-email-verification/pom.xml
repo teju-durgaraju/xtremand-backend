@@ -47,6 +47,10 @@
             <groupId>com.xtremand</groupId>
             <artifactId>xtremand-domain</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.xtremand</groupId>
+            <artifactId>xtremand-user</artifactId>
+        </dependency>
         <!-- Email & Network Utilities -->
         <dependency>
             <groupId>commons-validator</groupId>
@@ -115,10 +119,6 @@
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-test</artifactId>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.xtremand</groupId>
-            <artifactId>xtremand-user</artifactId>
         </dependency>
     </dependencies>
 

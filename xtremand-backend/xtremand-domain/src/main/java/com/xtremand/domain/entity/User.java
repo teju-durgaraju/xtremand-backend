@@ -69,9 +69,8 @@ public class User extends BaseEntity {
 	@Column(name = "is_email_verified", nullable = false)
 	private boolean emailVerified;
 
-	@Convert(disableConversion = true)
-	@JdbcTypeCode(SqlTypes.NAMED_ENUM)
-	@Column(columnDefinition = "user_status", nullable = false)
+	@Enumerated(EnumType.STRING)
+	@Column(name = "status", nullable = false)
 	private UserStatus status;
 
 	@Column(nullable = false)

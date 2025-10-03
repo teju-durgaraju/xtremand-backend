@@ -23,8 +23,8 @@ public interface EmailVerificationHistoryRepository extends JpaRepository<EmailV
             h.status AS status,
             COUNT(h.id) AS count
         FROM
-            xt_user_email_verification_history h
-        JOIN xt_users u ON h.user_id = u.id
+            xtremand_production.xt_user_email_verification_history h
+        JOIN xtremand_production.xt_users u ON h.user_id = u.id
         WHERE
             u.email = :userEmail AND h.checked_at >= :startDate
         GROUP BY
@@ -55,8 +55,8 @@ public interface EmailVerificationHistoryRepository extends JpaRepository<EmailV
                 COALESCE(COUNT(h.id), 0) AS totalProcessed,
                 COALESCE(AVG(h.score), 0) AS qualityScore
             FROM
-                xt_user_email_verification_history h
-            JOIN xt_users u ON h.user_id = u.id
+                xtremand_production.xt_user_email_verification_history h
+            JOIN xtremand_production.xt_users u ON h.user_id = u.id
             WHERE u.email = :userEmail
             """;
 
@@ -71,8 +71,8 @@ public interface EmailVerificationHistoryRepository extends JpaRepository<EmailV
                     h.*,
                     ROW_NUMBER() OVER (PARTITION BY h.email ORDER BY h.checked_at DESC) as rn
                 FROM
-                    xt_user_email_verification_history h
-                JOIN xt_users u ON h.user_id = u.id
+                    xtremand_production.xt_user_email_verification_history h
+                JOIN xtremand_production.xt_users u ON h.user_id = u.id
                 WHERE u.email = :userEmail
             )
             SELECT

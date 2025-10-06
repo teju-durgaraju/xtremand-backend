@@ -126,4 +126,12 @@ public interface EmailVerificationHistoryRepository extends JpaRepository<EmailV
         boolean getSmtpCheck();
         boolean getSmtpPing();
     }
+
+    @Query("SELECT MIN(h.checkedAt) AS earliest, MAX(h.checkedAt) AS latest FROM EmailVerificationHistory h WHERE h.user.id = :userId")
+    Optional<DateRangeProjection> findDateRangeByUserId(@Param("userId") Long userId);
+
+    interface DateRangeProjection {
+        Instant getEarliest();
+        Instant getLatest();
+    }
 }

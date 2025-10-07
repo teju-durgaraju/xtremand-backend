@@ -4,6 +4,7 @@ import com.xtremand.domain.entity.User;
 import com.xtremand.email.verification.model.ChartDropdownRange;
 import com.xtremand.email.verification.model.ChartDropdownResponse;
 import com.xtremand.email.verification.model.dto.chart.ChartDataDto;
+import com.xtremand.common.exception.BadRequestException;
 import com.xtremand.email.verification.model.dto.chart.ChartDataResponseDto;
 import com.xtremand.email.verification.model.dto.chart.ChartRange;
 import com.xtremand.email.verification.repository.EmailVerificationHistoryRepository;
@@ -86,7 +87,50 @@ public class EmailVerificationChartService {
         return ranges;
     }
 
+    public void validateChartRange(ChartRange range) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null) {
+            throw new IllegalStateException("User is not authenticated.");
+        }
+
+        String userEmail = authentication.getName();
+        Optional<User> userOpt = userRepository.findByEmail(userEmail);
+        if (userOpt.isEmpty()) {
+            throw new BadRequestException("User not found.");
+        }
+
+        Long userId = userOpt.get().getId();
+        Optional<EmailVerificationHistoryRepository.DateRangeProjection> dateRangeOpt = historyRepository.findDateRangeByUserId(userId);
+
+        int requiredMonths = switch (range) {
+            case M1 -> 1;
+            case M3 -> 3;
+            case M6 -> 6;
+            case Y1 -> 12;
+            case Y3 -> 36;
+            case Y5 -> 60;
+        };
+
+        if (dateRangeOpt.isEmpty() || dateRangeOpt.get().getEarliest() == null) {
+            if (requiredMonths > 1) { // Only M1 is allowed if no data
+                throw new BadRequestException("Invalid range selected. No data available for this range.");
+            }
+            return;
+        }
+
+        Instant earliestInstant = dateRangeOpt.get().getEarliest();
+        ZonedDateTime earliestZoned = earliestInstant.atZone(ZoneId.systemDefault());
+        ZonedDateTime now = ZonedDateTime.now(ZoneId.systemDefault());
+
+        long monthsOfData = ChronoUnit.MONTHS.between(earliestZoned, now);
+
+        if (monthsOfData + 1 < requiredMonths) {
+            throw new BadRequestException("You do not have enough data to view this range. Please select a shorter time frame.");
+        }
+    }
+
     public ChartDataResponseDto getChartData(ChartRange range) {
+        validateChartRange(range);
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String userEmail = authentication.getName();
         Instant startDate = calculateStartDate(range);

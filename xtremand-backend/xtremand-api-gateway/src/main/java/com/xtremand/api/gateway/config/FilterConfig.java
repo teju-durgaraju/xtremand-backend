@@ -18,7 +18,7 @@ public class FilterConfig {
     public FilterRegistrationBean<EmailDetectionFilter> emailDetectionFilterRegistration() {
         FilterRegistrationBean<EmailDetectionFilter> registrationBean = new FilterRegistrationBean<>();
         registrationBean.setFilter(emailDetectionFilter);
-        registrationBean.addUrlPatterns("/api/*");
+        registrationBean.addUrlPatterns("/*");
         registrationBean.setOrder(Ordered.HIGHEST_PRECEDENCE);
         return registrationBean;
     }

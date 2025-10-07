@@ -109,6 +109,11 @@ public class EmailVerificationHistory {
 	@Column(name = "checked_at", updatable = false)
 	private Instant checkedAt;
 
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "contact_id")
+	@ToString.Exclude
+	private Contact contact;
+
 	public enum VerificationStatus {
 		VALID, INVALID, RISKY, UNKNOWN, DISPOSABLE, BLACKLISTED
 	}

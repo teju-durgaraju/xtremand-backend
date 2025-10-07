@@ -9,16 +9,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-import org.springframework.web.util.ContentCachingRequestWrapper;
-
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
@@ -36,20 +32,18 @@ public class EmailDetectionFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         if (SUPPORTED_METHODS.contains(request.getMethod())) {
-            ContentCachingRequestWrapper requestWrapper = new ContentCachingRequestWrapper(request);
-            filterChain.doFilter(requestWrapper, response);
+            CachedBodyHttpServletRequest cachedRequest = new CachedBodyHttpServletRequest(request);
+            String requestBody = cachedRequest.getBody();
 
-            byte[] requestBody = requestWrapper.getContentAsByteArray();
-            String bodyString = new String(requestBody, StandardCharsets.UTF_8);
-
-            if (!bodyString.isEmpty()) {
-                Set<String> emails = extractEmails(bodyString);
+            if (requestBody != null && !requestBody.isEmpty()) {
+                Set<String> emails = extractEmails(requestBody);
                 if (!emails.isEmpty()) {
                     log.info("Detected {} emails in request to [{}]. Triggering async verification.",
                             emails.size(), request.getRequestURI());
                     emailVerifierService.verifyEmails(emails);
                 }
             }
+            filterChain.doFilter(cachedRequest, response);
         } else {
             filterChain.doFilter(request, response);
         }

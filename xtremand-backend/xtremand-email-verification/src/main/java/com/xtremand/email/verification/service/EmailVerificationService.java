@@ -1,5 +1,7 @@
 package com.xtremand.email.verification.service;
 
+import com.xtremand.contact.repository.ContactRepository;
+import com.xtremand.domain.entity.Contact;
 import com.xtremand.domain.entity.EmailVerificationBatch;
 import com.xtremand.domain.entity.EmailVerificationHistory;
 import com.xtremand.domain.entity.User;
@@ -36,6 +38,7 @@ public class EmailVerificationService {
 	private final ScoringProperties scoringProperties;
 	private final EmailVerificationHistoryRepository historyRepository;
 	private final UserRepository userRepository;
+	private final ContactRepository contactRepository;
 
 	@Transactional
 	public VerificationResult verifyEmail(String email) {
@@ -174,6 +177,13 @@ public class EmailVerificationService {
 		EmailVerificationHistory history = new EmailVerificationHistory();
 		history.setUser(user);
 		history.setEmail(result.getEmail());
+
+		// Find and set the contact if it exists
+		Contact contact = contactRepository.findByEmailIgnoreCase(result.getEmail());
+		if (contact != null) {
+			history.setContact(contact);
+		}
+
 		history.setDomain(domain);
 		history.setBatch(batch);
 		history.setStatus(result.getStatus());

@@ -51,6 +51,10 @@
             <groupId>com.xtremand</groupId>
             <artifactId>xtremand-user</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.xtremand</groupId>
+            <artifactId>xtremand-contact</artifactId>
+        </dependency>
         <!-- Email & Network Utilities -->
         <dependency>
             <groupId>commons-validator</groupId>

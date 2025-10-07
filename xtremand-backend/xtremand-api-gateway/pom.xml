@@ -16,5 +16,22 @@
                         <groupId>com.xtremand</groupId>
                         <artifactId>xtremand-config</artifactId>
                 </dependency>
+                <dependency>
+                        <groupId>com.xtremand</groupId>
+                        <artifactId>xtremand-email-verification</artifactId>
+                </dependency>
+                <dependency>
+                    <groupId>com.xtremand</groupId>
+                    <artifactId>xtremand-user</artifactId>
+                </dependency>
+                <dependency>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-web</artifactId>
+                </dependency>
+                <dependency>
+                    <groupId>org.projectlombok</groupId>
+                    <artifactId>lombok</artifactId>
+                    <scope>provided</scope>
+                </dependency>
         </dependencies>
 </project>

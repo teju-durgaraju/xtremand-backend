@@ -26,6 +26,7 @@
 		<module>xtremand-extension</module>
 		<module>xtremand-config</module>
 		<module>xtremand-api-gateway</module>
+		<module>xtremand-api-interceptor</module>
 	</modules>
 	<properties>
 		<java.version>21</java.version>

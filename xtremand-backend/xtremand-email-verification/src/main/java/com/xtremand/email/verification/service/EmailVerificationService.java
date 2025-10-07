@@ -39,7 +39,7 @@ public class EmailVerificationService {
 
 	@Transactional
 	public VerificationResult verifyEmail(String email) {
-		return this.verifyEmail(email, null);
+		return this.verifyEmail(email, (EmailVerificationBatch) null);
 	}
 
 	@Transactional
@@ -53,7 +53,19 @@ public class EmailVerificationService {
 			user = userRepository.findByEmail(userEmail)
 					.orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + userEmail));
 		}
+		return performVerification(email, user, batch);
+	}
 
+	@Transactional
+	public VerificationResult verifyEmailAsynchronously(String email, User user) {
+		log.info("Performing system-level verification for email: {}", email);
+		if (user == null) {
+			throw new IllegalArgumentException("A user is required for asynchronous email verification.");
+		}
+		return performVerification(email, user, null);
+	}
+
+	private VerificationResult performVerification(String email, User user, EmailVerificationBatch batch) {
 		// 1. Initial Syntax Check
 		boolean isSyntaxValid = syntaxCheckProvider.isValid(email);
 		String domain = null;

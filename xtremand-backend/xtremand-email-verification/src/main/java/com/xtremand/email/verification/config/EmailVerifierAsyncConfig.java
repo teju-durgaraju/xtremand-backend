@@ -9,7 +9,7 @@ import java.util.concurrent.Executor;
 
 @Configuration
 @EnableAsync
-public class AsyncConfig {
+public class EmailVerifierAsyncConfig {
 
     public static final String BATCH_VERIFICATION_EXECUTOR = "batchVerificationExecutor";
 

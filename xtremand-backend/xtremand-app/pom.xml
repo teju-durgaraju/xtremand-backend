@@ -64,6 +64,10 @@
 		</dependency>
 		<dependency>
 			<groupId>com.xtremand</groupId>
+			<artifactId>xtremand-api-gateway</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.xtremand</groupId>
 			<artifactId>xtremand-email</artifactId>
 			<version>${project.version}</version>
 		</dependency>

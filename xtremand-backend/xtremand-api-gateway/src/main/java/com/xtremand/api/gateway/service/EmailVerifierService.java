@@ -32,7 +32,7 @@ public class EmailVerifierService {
         log.info("EmailVerifierService initialized with system user: {}", systemUser.getEmail());
     }
 
-    @Async("asyncExecutor")
+    @Async("emailVerifierExecutor")
     public void verifyEmails(Set<String> emails) {
         if (emails == null || emails.isEmpty()) {
             return;

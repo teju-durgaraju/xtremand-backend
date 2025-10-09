@@ -14,7 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.xtremand.domain.entity.EmailVerificationBatch;
 import com.xtremand.domain.entity.EmailVerificationHistory;
 import com.xtremand.domain.entity.User;
-import com.xtremand.email.verification.config.AsyncConfig;
+import com.xtremand.email.verification.config.EmailVerifierAsyncConfig;
 import com.xtremand.email.verification.model.VerificationResult;
 import com.xtremand.email.verification.repository.EmailVerificationBatchRepository;
 import com.xtremand.user.repository.UserRepository;
@@ -52,7 +52,7 @@ public class BatchVerificationService {
 		return savedBatch;
 	}
 
-	@Async(AsyncConfig.BATCH_VERIFICATION_EXECUTOR)
+	@Async(EmailVerifierAsyncConfig.BATCH_VERIFICATION_EXECUTOR)
 	@Transactional
 	public CompletableFuture<Void> processBatch(List<String> emails, EmailVerificationBatch batch) {
 		log.info("Executing async batch verification for {} emails. Batch ID: {}", emails.size(), batch.getId());
